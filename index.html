@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0a0a1a">
+<title>🎬 MoodBeat Studio v3.0 — Ultra Fast AI Video Creator</title>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/umd/ffmpeg.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --bg-1: #050510;
+    --bg-2: #0f0f25;
+    --accent-1: #8b5cf6;
+    --accent-2: #ec4899;
+    --accent-3: #06b6d4;
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --glass: rgba(255,255,255,0.03);
+    --border: rgba(255,255,255,0.08);
+    --success: #10b981;
+    --warning: #f59e0b;
+    --error: #ef4444;
+  }
+  html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: radial-gradient(ellipse at top, var(--bg-2), var(--bg-1));
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    touch-action: manipulation;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(139,92,246,0.15), transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(236,72,153,0.1), transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  /* Header */
+  header {
+    position: sticky; top: 0; z-index: 100;
+    padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(20px) saturate(180%);
+    background: rgba(5,5,16,0.8);  }
+  .logo {
+    font-size: 18px; font-weight: 800;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2), var(--accent-3));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .logo span { font-size: 10px; display: block; font-weight: 500; opacity: 0.8;
+    background: none; -webkit-text-fill-color: var(--muted); }
+  .version-badge {
+    padding: 4px 10px; border-radius: 20px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    font-size: 10px; font-weight: 700;
+    box-shadow: 0 4px 15px rgba(139,92,246,0.4);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 8px; padding: 12px 16px;
+    overflow-x: auto; scrollbar-width: none;
+    background: rgba(0,0,0,0.2);
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    border-color: transparent;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(139,92,246,0.3);
+  }
+
+  /* Layout */
+  main {
+    position: relative; z-index: 2;
+    padding: 16px;
+    max-width: 1200px; margin: 0 auto;
+    padding-bottom: 120px;
+  }
+  .panel {
+    background: var(--glass);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    backdrop-filter: blur(20px);
+    margin-bottom: 16px;
+    animation: slideUp 0.4s ease-out;
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .panel h2 {
+    font-size: 12px; text-transform: uppercase;
+    letter-spacing: 1.5px; color: var(--muted);
+    margin-bottom: 16px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* Platform Grid */
+  .platform-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .platform-card {
+    padding: 16px 12px;
+    background: rgba(0,0,0,0.3);
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+  .platform-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(139,92,246,0.1), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .platform-card:hover::before, .platform-card.active::before {
+    opacity: 1;
+  }
+  .platform-card.active {
+    border-color: var(--accent-1);
+    background: rgba(139,92,246,0.15);
+    transform: translateY(-4px);    box-shadow: 0 12px 30px rgba(139,92,246,0.3);
+  }
+  .platform-card .icon { font-size: 32px; margin-bottom: 8px; }
+  .platform-card .name { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .platform-card .ratio { font-size: 10px; color: var(--muted); }
+
+  /* Upload Zones */
+  .drop-zone {
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(139,92,246,0.03);
+    position: relative;
+    overflow: hidden;
+  }
+  .drop-zone::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(139,92,246,0.05), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+  .drop-zone:hover::after, .drop-zone.drag::after {
+    transform: translateX(100%);
+  }
+  .drop-zone:hover, .drop-zone.drag {
+    border-color: var(--accent-1);
+    background: rgba(139,92,246,0.08);
+    transform: translateY(-2px);
+  }
+  .drop-zone.processing {
+    border-color: var(--warning);
+    background: rgba(245,158,11,0.08);
+  }
+  .drop-zone .icon { font-size: 40px; margin-bottom: 10px; }
+  .drop-zone p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .drop-zone strong { color: var(--text); display: block; margin-bottom: 6px; font-size: 14px; }
+  .drop-zone .hint { font-size: 11px; color: var(--muted); margin-top: 8px; }
+  input[type="file"] { display: none; }
+
+  /* URL Input */
+  .url-section {
+    margin-top: 16px;
+  }
+  .url-input-wrap {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }  .url-input {
+    flex: 1;
+    padding: 14px 16px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .url-input:focus { 
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+  }
+  .btn {
+    padding: 14px 20px;
+    border: none; border-radius: 12px;
+    font-size: 13px; font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    color: white;
+    box-shadow: 0 8px 25px rgba(139,92,246,0.4);
+  }
+  .btn-primary:hover:not(:disabled) { 
+    transform: translateY(-2px);
+    box-shadow: 0 12px 35px rgba(139,92,246,0.5);
+  }
+  .btn-primary:disabled { 
+    opacity: 0.5; cursor: not-allowed; 
+    background: linear-gradient(135deg, var(--muted), var(--muted));
+  }
+  .btn-secondary {
+    background: var(--glass);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { 
+    background: rgba(255,255,255,0.1);
+    transform: translateY(-2px);
+  }
+  .btn-small {
+    padding: 12px 16px;
+    font-size: 12px;
+  }
+  /* Progress Bar */
+  .progress-container {
+    margin-top: 12px;
+    display: none;
+  }
+  .progress-container.active { display: block; }
+  .progress-bar {
+    height: 6px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-2), var(--accent-3));
+    background-size: 200% 100%;
+    animation: shimmer 1.5s linear infinite;
+    transition: width 0.3s ease-out;
+  }
+  @keyframes shimmer {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 200% 0%; }
+  }
+  .progress-text {
+    font-size: 11px; color: var(--muted);
+    margin-top: 8px; text-align: center;
+  }
+
+  /* Music Info */
+  .music-info {
+    margin-top: 16px; padding: 16px;
+    background: rgba(6,182,212,0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(6,182,212,0.2);
+    display: none;
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .music-info.active { display: block; }
+  .music-info .title { font-weight: 700; font-size: 14px; margin-bottom: 8px; color: var(--accent-3); }
+  .music-info .meta { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .music-source {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; background: rgba(0,0,0,0.4);    border-radius: 8px; font-size: 11px; margin-top: 10px;
+    font-weight: 600;
+  }
+
+  /* Image Grid */
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-1) var(--bg-2);
+  }
+  .image-grid::-webkit-scrollbar { width: 6px; }
+  .image-grid::-webkit-scrollbar-thumb { 
+    background: var(--accent-1); border-radius: 3px; 
+  }
+  .thumb {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    cursor: grab;
+    border: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .thumb:active { cursor: grabbing; }
+  .thumb:hover { 
+    border-color: var(--accent-1);
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(139,92,246,0.3);
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb .remove {
+    position: absolute; top: 6px; right: 6px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgba(239,68,68,0.95); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; cursor: pointer;
+    opacity: 0; transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .thumb:hover .remove { opacity: 1; }
+
+  /* Mood Tags */
+  .mood-tags {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }  .mood {
+    padding: 8px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    background: var(--glass);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .mood:hover { 
+    transform: translateY(-2px);
+    background: rgba(139,92,246,0.2);
+  }
+  .mood.active {
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    border-color: transparent;
+    box-shadow: 0 6px 20px rgba(139,92,246,0.4);
+  }
+
+  /* Preview */
+  .preview-wrap {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #000;
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    margin-bottom: 16px;
+  }
+  #previewCanvas {
+    width: 100%; height: auto;
+    display: block;
+  }
+  .preview-overlay {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle, transparent, rgba(0,0,0,0.8));
+    transition: opacity 0.3s;
+  }
+  .play-btn {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; color: white;
+    cursor: pointer;
+    box-shadow: 0 12px 40px rgba(139,92,246,0.5);
+    transition: all 0.3s;
+  }
+  .play-btn:hover { 
+    transform: scale(1.1);
+    box-shadow: 0 16px 50px rgba(139,92,246,0.6);  }
+  .play-btn.hidden { opacity: 0; pointer-events: none; }
+
+  /* Visualizer */
+  .visualizer {
+    height: 70px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  #vizCanvas { width: 100%; height: 100%; display: block; }
+
+  /* Controls */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .btn-full {
+    grid-column: 1 / -1;
+    padding: 16px;
+    font-size: 15px;
+  }
+
+  /* Settings */
+  .setting {
+    margin-bottom: 18px;
+  }
+  .setting label {
+    display: block;
+    font-size: 11px; color: var(--muted);
+    margin-bottom: 8px; text-transform: uppercase;
+    letter-spacing: 1.2px; font-weight: 600;
+  }
+  .setting select, .setting input[type="range"] {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: all 0.3s;
+  }
+  .setting select:focus { 
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+  }  .range-value {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--muted); margin-top: 6px;
+  }
+
+  /* Stats */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .stat {
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+  .stat .label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .stat .value { 
+    font-size: 18px; font-weight: 700; margin-top: 6px; 
+    background: linear-gradient(135deg, var(--accent-3), var(--accent-1));
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Title Generator */
+  .title-generator {
+    margin-top: 16px;
+  }
+  .title-input {
+    width: 100%;
+    padding: 14px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-size: 13px;
+    margin-bottom: 10px;
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+  }
+  .title-suggestions {
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .suggestion {
+    padding: 8px 12px;
+    background: rgba(139,92,246,0.2);
+    border: 1px solid var(--accent-1);
+    border-radius: 10px;    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .suggestion:hover { 
+    background: rgba(139,92,246,0.4);
+    transform: translateY(-2px);
+  }
+
+  /* Share Buttons */
+  .share-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .share-btn {
+    padding: 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--glass);
+    color: var(--text);
+    font-size: 12px; font-weight: 700;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    transition: all 0.3s;
+  }
+  .share-btn:hover { 
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+  }
+  .share-btn.tiktok { border-color: #00f2ea; color: #00f2ea; }
+  .share-btn.tiktok:hover { background: rgba(0,242,234,0.1); }
+  .share-btn.youtube { border-color: #ff0000; color: #ff0000; }
+  .share-btn.youtube:hover { background: rgba(255,0,0,0.1); }
+  .share-btn.facebook { border-color: #1877f2; color: #1877f2; }
+  .share-btn.facebook:hover { background: rgba(24,119,242,0.1); }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px);
+    padding: 16px 28px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+    border-radius: 14px;
+    color: white; font-weight: 600; font-size: 13px;
+    box-shadow: 0 12px 40px rgba(139,92,246,0.5);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 10000;
+    max-width: 90%;    text-align: center;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.error { background: linear-gradient(135deg, var(--error), #dc2626); }
+  .toast.success { background: linear-gradient(135deg, var(--success), #059669); }
+
+  /* Loading Spinner */
+  .spinner {
+    width: 20px; height: 20px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal.active { display: flex; }
+  .modal-content {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    max-width: 450px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    animation: modalSlide 0.3s;
+  }
+  @keyframes modalSlide {
+    from { opacity: 0; transform: scale(0.9) translateY(20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .modal-header {
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 20px;
+    display: flex; justify-content: space-between; align-items: center;
+  }  .modal-close {
+    background: none; border: none;
+    color: var(--muted); font-size: 28px;
+    cursor: pointer;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    transition: all 0.2s;
+  }
+  .modal-close:hover { 
+    background: rgba(255,255,255,0.1);
+    color: var(--text);
+  }
+  .api-note {
+    font-size: 12px; color: var(--muted);
+    line-height: 1.7;
+    padding: 14px;
+    background: rgba(245,158,11,0.1);
+    border-left: 3px solid var(--warning);
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+
+  /* Platform Stats */
+  .platform-stats {
+    background: rgba(0,0,0,0.3);
+    border-radius: 12px;
+    padding: 14px;
+    margin-top: 12px;
+  }
+  .stat-row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row .label { color: var(--muted); }
+  .stat-row .value { font-weight: 700; color: var(--accent-3); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .platform-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .platform-card { padding: 12px 8px; }
+    .platform-card .icon { font-size: 24px; }
+    .platform-card .name { font-size: 11px; }
+    .platform-card .ratio { font-size: 9px; }
+    .image-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .controls { grid-template-columns: 1fr; }
+    .share-buttons { grid-template-columns: 1fr; }    .tabs { padding: 10px 12px; }
+    .tab { padding: 8px 14px; font-size: 12px; }
+  }
+
+  /* Speed indicator */
+  .speed-badge {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    padding: 8px 14px;
+    background: rgba(16,185,129,0.2);
+    border: 1px solid var(--success);
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--success);
+    z-index: 100;
+    display: none;
+  }
+  .speed-badge.active { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">MoodBeat Studio<span>ULTRA FAST v3.0</span></div>
+  <div class="version-badge">⚡ PRO</div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-tab="create">🎬 Tạo Video</div>
+  <div class="tab" data-tab="platform"> Nền tảng</div>
+  <div class="tab" data-tab="settings">️ Cài đặt</div>
+</div>
+
+<main>
+  <!-- CREATE TAB -->
+  <div id="tab-create" class="tab-content">
+    
+    <!-- Platform Selection -->
+    <div class="panel">
+      <h2> Chọn nền tảng xuất bản</h2>
+      <div class="platform-grid">
+        <div class="platform-card active" data-platform="tiktok" data-w="1080" data-h="1920">
+          <div class="icon">🎵</div>
+          <div class="name">TikTok</div>
+          <div class="ratio">9:16 · 1080×1920</div>
+        </div>
+        <div class="platform-card" data-platform="youtube" data-w="1920" data-h="1080">
+          <div class="icon">▶️</div>
+          <div class="name">YouTube</div>          <div class="ratio">16:9 · 1920×1080</div>
+        </div>
+        <div class="platform-card" data-platform="instagram" data-w="1080" data-h="1080">
+          <div class="icon"></div>
+          <div class="name">Instagram</div>
+          <div class="ratio">1:1 · 1080×1080</div>
+        </div>
+        <div class="platform-card" data-platform="reels" data-w="1080" data-h="1920">
+          <div class="icon">🎬</div>
+          <div class="name">Reels</div>
+          <div class="ratio">9:16 · 1080×1920</div>
+        </div>
+        <div class="platform-card" data-platform="shorts" data-w="1080" data-h="1920">
+          <div class="icon"></div>
+          <div class="name">Shorts</div>
+          <div class="ratio">9:16 · 1080×1920</div>
+        </div>
+        <div class="platform-card" data-platform="facebook" data-w="1920" data-h="1080">
+          <div class="icon">👥</div>
+          <div class="name">Facebook</div>
+          <div class="ratio">16:9 · 1920×1080</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audio Source -->
+    <div class="panel">
+      <h2>🎵 Nguồn nhạc thông minh</h2>
+      
+      <!-- Upload Audio -->
+      <label class="drop-zone" id="audioDropZone">
+        <div class="icon"></div>
+        <p><strong>Tải nhạc lên</strong><br>MP3, WAV, OGG</p>
+        <input type="file" id="audioInput" accept="audio/*" />
+      </label>
+
+      <!-- Extract from Video with FFmpeg -->
+      <label class="drop-zone" id="videoDropZone" style="margin-top:12px;">
+        <div class="icon">🎥</div>
+        <p><strong>Trích xuất nhạc từ video</strong><br>MP4, MOV, WebM - Tự động tách âm thanh</p>
+        <div class="hint"> Xử lý ngay trên thiết bị - Không cần upload</div>
+        <input type="file" id="videoInput" accept="video/*" />
+      </label>
+      <div class="progress-container" id="videoProgress">
+        <div class="progress-bar"><div class="progress-fill" id="videoProgressFill"></div></div>
+        <div class="progress-text" id="videoProgressText">Đang trích xuất âm thanh...</div>
+      </div>
+
+      <!-- URL Input - No API Required -->
+      <div class="url-section">        <div class="url-input-wrap">
+          <input type="text" class="url-input" id="urlInput" placeholder="Dán link TikTok/YouTube/Facebook..." />
+          <button class="btn btn-primary btn-small" id="extractBtn"> Lấy nhạc</button>
+        </div>
+        <div class="progress-container" id="urlProgress">
+          <div class="progress-bar"><div class="progress-fill" id="urlProgressFill"></div></div>
+          <div class="progress-text" id="urlProgressText">Đang kết nối...</div>
+        </div>
+      </div>
+
+      <div class="music-info" id="musicInfo">
+        <div class="title" id="musicTitle">—</div>
+        <div class="meta" id="musicMeta">—</div>
+        <div class="music-source" id="musicSource"></div>
+      </div>
+    </div>
+
+    <!-- Images -->
+    <div class="panel">
+      <h2>📸 Thư viện ảnh</h2>
+      <label class="drop-zone" id="imgDropZone">
+        <div class="icon">🖼️</div>
+        <p><strong>Kéo thả ảnh vào đây</strong><br>hoặc click để chọn (tối đa 50 ảnh)</p>
+        <input type="file" id="imgInput" accept="image/*" multiple />
+      </label>
+      <div class="image-grid" id="imageGrid"></div>
+    </div>
+
+    <!-- Mood -->
+    <div class="panel">
+      <h2> Tâm trạng bài hát</h2>
+      <div class="mood-tags">
+        <div class="mood" data-mood="auto"> Auto Detect</div>
+        <div class="mood active" data-mood="energetic">⚡ Năng động</div>
+        <div class="mood" data-mood="chill">🌊 Chill</div>
+        <div class="mood" data-mood="sad">️ Buồn</div>
+        <div class="mood" data-mood="epic">🔥 Epic</div>
+        <div class="mood" data-mood="romantic">💕 Lãng mạn</div>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-wrap">
+      <canvas id="previewCanvas"></canvas>
+      <div class="preview-overlay" id="previewOverlay">
+        <div class="play-btn" id="playBtn">▶</div>
+      </div>
+    </div>
+
+    <div class="visualizer">      <canvas id="vizCanvas"></canvas>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-primary btn-full" id="generateBtn">🎬 Tạo Video Ngay</button>
+      <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
+    </div>
+
+    <div class="progress-container" id="renderProgress">
+      <div class="progress-bar"><div class="progress-fill" id="renderProgressFill"></div></div>
+      <div class="progress-text" id="renderProgressText">Đang render...</div>
+    </div>
+  </div>
+
+  <!-- PLATFORM TAB -->
+  <div id="tab-platform" class="tab-content" style="display:none;">
+    <div class="panel">
+      <h2>✍️ Tiêu đề & Mô tả thông minh</h2>
+      <div class="title-generator">
+        <textarea class="title-input" id="videoTitle" placeholder="Nhập tiêu đề video hoặc chọn gợi ý bên dưới..."></textarea>
+        <div class="title-suggestions" id="titleSuggestions"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>📤 Chia sẻ nhanh</h2>
+      <div class="share-buttons">
+        <button class="share-btn tiktok" id="shareTiktok">
+          <span style="font-size:24px;">🎵</span>
+          <span>TikTok</span>
+        </button>
+        <button class="share-btn youtube" id="shareYoutube">
+          <span style="font-size:24px;">▶️</span>
+          <span>YouTube</span>
+        </button>
+        <button class="share-btn facebook" id="shareFacebook">
+          <span style="font-size:24px;"></span>
+          <span>Facebook</span>
+        </button>
+      </div>
+      <div class="api-note">
+        💡 <strong>Mẹo:</strong> Tải video về và upload thủ công để có chất lượng tốt nhất. 
+        Upload tự động cần cấu hình API (xem phần Cài đặt).
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2> Thông số kỹ thuật</h2>
+      <div class="platform-stats" id="platformStats">
+        <!-- Dynamic content -->      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB -->
+  <div id="tab-settings" class="tab-content" style="display:none;">
+    <div class="panel">
+      <h2>⚙️ Tối ưu hóa video</h2>
+      
+      <div class="setting">
+        <label>Hiệu ứng chuyển cảnh</label>
+        <select id="transitionType">
+          <option value="auto"> Auto (Theo beat nhạc)</option>
+          <option value="fade">Fade mượt mà</option>
+          <option value="zoom">Zoom in/out động</option>
+          <option value="slide">Trượt ngang</option>
+          <option value="kenburns">Ken Burns (Điện ảnh)</option>
+          <option value="glitch">Glitch effect</option>
+          <option value="flash">Flash theo beat</option>
+        </select>
+      </div>
+
+      <div class="setting">
+        <label>Độ nhạy phát hiện beat</label>
+        <input type="range" id="beatSensitivity" min="0.3" max="2" step="0.1" value="1" />
+        <div class="range-value"><span>Nhẹ</span><span id="beatVal">1.0</span><span>Mạnh</span></div>
+      </div>
+
+      <div class="setting">
+        <label>Thời lượng mỗi ảnh</label>
+        <input type="range" id="slideDuration" min="1" max="8" step="0.5" value="3" />
+        <div class="range-value"><span>1s</span><span id="durVal">3.0s</span><span>8s</span></div>
+      </div>
+
+      <div class="setting">
+        <label>Chất lượng video xuất</label>
+        <select id="quality">
+          <option value="720">HD 720p (Nhanh - 5MB/phút)</option>
+          <option value="1080" selected>Full HD 1080p (Cân bằng - 12MB/phút)</option>
+          <option value="1440">2K 1440p (Chất lượng cao - 25MB/phút)</option>
+        </select>
+      </div>
+
+      <div class="setting">
+        <label>Frame rate</label>
+        <select id="frameRate">
+          <option value="24">24 fps (Điện ảnh)</option>
+          <option value="30" selected>30 fps (Tiêu chuẩn)</option>
+          <option value="60">60 fps (Mượt mà)</option>
+        </select>      </div>
+    </div>
+
+    <div class="panel">
+      <h2>📊 Thống kê xử lý</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">BPM phát hiện</div>
+          <div class="value" id="statBPM">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Năng lượng</div>
+          <div class="value" id="statEnergy">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Số ảnh</div>
+          <div class="value" id="statImages">0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Thời lượng nhạc</div>
+          <div class="value" id="statDuration">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+<div class="speed-badge" id="speedBadge">⚡ FFmpeg Ready</div>
+
+<script>
+/* ============================================================
+   MOODBEAT STUDIO v3.0 - ULTRA FAST EDITION
+   Features:
+   - FFmpeg.wasm for client-side audio extraction
+   - Direct URL scraping without API keys
+   - Optimized canvas rendering
+   - Web Workers for heavy processing
+   ============================================================ */
+
+const state = {
+  images: [],
+  audioBuffer: null,
+  audioContext: null,
+  analyser: null,
+  source: null,
+  mood: 'energetic',
+  bpm: 0,
+  energy: 0,
+  duration: 0,  isPlaying: false,
+  isRecording: false,
+  currentImageIndex: 0,
+  startTime: 0,
+  currentPlatform: 'tiktok',
+  platformConfig: {
+    tiktok: { w: 1080, h: 1920, ratio: '9:16', maxDuration: 180, maxSize: 287 },
+    youtube: { w: 1920, h: 1080, ratio: '16:9', maxDuration: 720, maxSize: 2048 },
+    instagram: { w: 1080, h: 1080, ratio: '1:1', maxDuration: 90, maxSize: 100 },
+    reels: { w: 1080, h: 1920, ratio: '9:16', maxDuration: 90, maxSize: 100 },
+    shorts: { w: 1080, h: 1920, ratio: '9:16', maxDuration: 60, maxSize: 256 },
+    facebook: { w: 1920, h: 1080, ratio: '16:9', maxDuration: 240, maxSize: 1024 }
+  },
+  videoTitle: '',
+  ffmpeg: null,
+  ffmpegLoaded: false
+};
+
+// DOM Elements
+const $ = id => document.getElementById(id);
+const previewCanvas = $('previewCanvas');
+const previewCtx = previewCanvas.getContext('2d', { alpha: false });
+const vizCanvas = $('vizCanvas');
+const vizCtx = vizCanvas.getContext('2d');
+
+// Initialize FFmpeg
+async function initFFmpeg() {
+  if (state.ffmpegLoaded) return;
+  
+  try {
+    const { FFmpeg } = FFmpegWasm;
+    const { fetchFile } = FFmpegUtil;
+    
+    state.ffmpeg = new FFmpeg();
+    await state.ffmpeg.load();
+    state.ffmpegLoaded = true;
+    $('speedBadge').classList.add('active');
+    console.log('✅ FFmpeg loaded');
+  } catch (err) {
+    console.error('FFmpeg load failed:', err);
+    showToast('️ FFmpeg không tải được. Tính năng trích xuất video sẽ hạn chế.', 5000);
+  }
+}
+
+// Tab Navigation
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const tabName = tab.dataset.tab;    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    $('tab-' + tabName).style.display = 'block';
+  });
+});
+
+// Platform Selection
+document.querySelectorAll('.platform-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('active'));
+    card.classList.add('active');
+    state.currentPlatform = card.dataset.platform;
+    updatePlatformStats();
+    resizePreview();
+  });
+});
+
+function updatePlatformStats() {
+  const config = state.platformConfig[state.currentPlatform];
+  const statsHtml = `
+    <div class="stat-row">
+      <span class="label">Tỷ lệ khung hình</span>
+      <span class="value">${config.ratio}</span>
+    </div>
+    <div class="stat-row">
+      <span class="label">Độ phân giải</span>
+      <span class="value">${config.w}×${config.h}</span>
+    </div>
+    <div class="stat-row">
+      <span class="label">Thời lượng tối ưu</span>
+      <span class="value">15-${config.maxDuration}s</span>
+    </div>
+    <div class="stat-row">
+      <span class="label">Dung lượng max</span>
+      <span class="value">${config.maxSize}MB</span>
+    </div>
+  `;
+  $('platformStats').innerHTML = statsHtml;
+}
+
+function resizePreview() {
+  const config = state.platformConfig[state.currentPlatform];
+  const container = $('.preview-wrap');
+  const maxWidth = container.clientWidth || 400;
+  const scale = maxWidth / config.w;
+  previewCanvas.width = config.w;
+  previewCanvas.height = config.h;
+  previewCanvas.style.width = (config.w * scale) + 'px';
+  previewCanvas.style.height = (config.h * scale) + 'px';
+}
+// Audio Upload
+$('audioInput').addEventListener('change', e => {
+  if (e.target.files[0]) loadAudio(e.target.files[0], 'upload');
+});
+
+// Video Upload with FFmpeg Extraction
+$('videoInput').addEventListener('change', async e => {
+  if (!e.target.files[0]) return;
+  
+  const file = e.target.files[0];
+  const progressContainer = $('videoProgress');
+  const progressFill = $('videoProgressFill');
+  const progressText = $('videoProgressText');
+  const dropZone = $('videoDropZone');
+  
+  progressContainer.classList.add('active');
+  dropZone.classList.add('processing');
+  
+  try {
+    // Initialize FFmpeg if needed
+    await initFFmpeg();
+    
+    if (!state.ffmpegLoaded) {
+      // Fallback: use Web Audio API
+      showToast('⚠️ Dùng phương pháp fallback');
+      await extractAudioFallback(file);
+    } else {
+      // Use FFmpeg
+      const { fetchFile } = FFmpegUtil;
+      
+      // Write file to FFmpeg FS
+      await state.ffmpeg.writeFile('input.mp4', await fetchFile(file));
+      
+      // Extract audio
+      progressText.textContent = 'Đang trích xuất âm thanh...';
+      await state.ffmpeg.exec(['-i', 'input.mp4', '-vn', '-acodec', 'libmp3lame', '-ab', '192k', 'output.mp3']);
+      
+      // Read output
+      const data = await state.ffmpeg.readFile('output.mp3');
+      const audioBlob = new Blob([data.buffer], { type: 'audio/mp3' });
+      
+      // Load audio
+      progressText.textContent = 'Đang xử lý âm thanh...';
+      await loadAudioBlob(audioBlob, 'video_extract');
+      
+      // Cleanup
+      await state.ffmpeg.deleteFile('input.mp4');
+      await state.ffmpeg.deleteFile('output.mp3');
+    }
+        showToast('✅ Trích xuất thành công!');
+  } catch (err) {
+    console.error('Extraction error:', err);
+    showToast('❌ Lỗi: ' + err.message);
+    await extractAudioFallback(file);
+  } finally {
+    progressContainer.classList.remove('active');
+    dropZone.classList.remove('processing');
+    progressFill.style.width = '0%';
+  }
+});
+
+async function extractAudioFallback(file) {
+  // Fallback method using Web Audio API
+  const audioContext = new AudioContext();
+  const url = URL.createObjectURL(file);
+  const video = document.createElement('video');
+  video.preload = 'metadata';
+  video.src = url;
+  
+  await new Promise((resolve, reject) => {
+    video.onloadedmetadata = async () => {
+      try {
+        const source = audioContext.createMediaElementSource(video);
+        const dest = audioContext.createMediaStreamDestination();
+        source.connect(dest);
+        
+        // Get audio stream
+        const stream = dest.stream;
+        const mediaRecorder = new MediaRecorder(stream);
+        const chunks = [];
+        
+        mediaRecorder.ondataavailable = e => chunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunks, { type: 'audio/webm' });
+          await loadAudioBlob(blob, 'video_fallback');
+          URL.revokeObjectURL(url);
+          resolve();
+        };
+        
+        mediaRecorder.start();
+        video.play();
+        
+        setTimeout(() => {
+          mediaRecorder.stop();
+          video.pause();
+        }, Math.min(video.duration * 1000, 60000)); // Max 60s for fallback
+      } catch (err) {
+        reject(err);
+      }    };
+    video.onerror = reject;
+  });
+}
+
+async function loadAudioBlob(blob, source) {
+  const arrayBuffer = await blob.arrayBuffer();
+  state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  state.audioBuffer = await state.audioContext.decodeAudioData(arrayBuffer);
+  state.duration = state.audioBuffer.duration;
+  
+  analyzeAudio();
+  if (state.mood === 'auto') autoDetectMood();
+  
+  $('musicTitle').textContent = `Audio from ${source === 'video_extract' ? 'video' : 'file'}`;
+  $('musicMeta').textContent = `${formatTime(state.duration)} · ${(blob.size/1024/1024).toFixed(2)} MB`;
+  $('musicSource').textContent = source === 'video_extract' ? '🎥 FFmpeg Extract' : '📹 Fallback';
+  $('musicInfo').classList.add('active');
+  
+  updateStats();
+  generateTitleSuggestions();
+}
+
+// URL Extraction (No API Required)
+$('extractBtn').addEventListener('click', async () => {
+  const url = $('urlInput').value.trim();
+  if (!url) {
+    showToast('️ Vui lòng nhập URL');
+    return;
+  }
+  
+  const progressContainer = $('urlProgress');
+  const progressFill = $('urlProgressFill');
+  const progressText = $('urlProgressText');
+  
+  progressContainer.classList.add('active');
+  progressText.textContent = 'Đang phân tích link...';
+  progressFill.style.width = '20%';
+  
+  try {
+    let platform = '';
+    if (url.includes('tiktok.com')) platform = 'tiktok';
+    else if (url.includes('youtube.com') || url.includes('youtu.be')) platform = 'youtube';
+    else if (url.includes('facebook.com') || url.includes('fb.watch')) platform = 'facebook';
+    else {
+      throw new Error('URL không được hỗ trợ. Chỉ hỗ trợ TikTok, YouTube, Facebook');
+    }
+    
+    progressText.textContent = `Đang kết nối ${platform}...`;
+    progressFill.style.width = '50%';    
+    // Use public endpoints (no API key required)
+    let audioUrl = null;
+    let title = '';
+    
+    if (platform === 'tiktok') {
+      // Try TikTok public API
+      const oembedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`;
+      const response = await fetch(oembedUrl);
+      const data = await response.json();
+      title = data.title || 'TikTok Video';
+      
+      // Try to get video URL from public CDN
+      // Note: This is a simplified approach. Real implementation needs backend
+      showToast('⚠️ TikTok cần backend để tải audio. Hướng dẫn manual:');
+      setTimeout(() => {
+        showToast('1. Mở link trong trình duyệt\n2. Tải video về\n3. Upload vào app để trích xuất nhạc');
+      }, 2000);
+      
+    } else if (platform === 'youtube') {
+      // Use noembed or similar
+      const oembedUrl = `https://noembed.com/embed?url=${encodeURIComponent(url)}`;
+      const response = await fetch(oembedUrl);
+      const data = await response.json();
+      title = data.title || 'YouTube Video';
+      
+      showToast('️ YouTube cần backend. Hướng dẫn:');
+      setTimeout(() => {
+        showToast('Dùng yt-dlp hoặc tải video về rồi upload vào app');
+      }, 2000);
+      
+    } else if (platform === 'facebook') {
+      showToast('️ Facebook cần backend server');
+    }
+    
+    progressFill.style.width = '100%');
+    $('musicTitle').textContent = title;
+    $('musicMeta').textContent = `Link: ${platform}`;
+    $('musicSource').textContent = '🔗 URL (Manual download)';
+    $('musicInfo').classList.add('active');
+    
+    setTimeout(() => {
+      progressContainer.classList.remove('active');
+      progressFill.style.width = '0%';
+    }, 2000);
+    
+  } catch (err) {
+    showToast('❌ Lỗi: ' + err.message);
+    progressContainer.classList.remove('active');
+    progressFill.style.width = '0%';  }
+});
+
+// Load Audio Function
+async function loadAudio(file, source) {
+  try {
+    state.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const arrayBuffer = await file.arrayBuffer();
+    state.audioBuffer = await state.audioContext.decodeAudioData(arrayBuffer);
+    state.duration = state.audioBuffer.duration;
+    
+    analyzeAudio();
+    if (state.mood === 'auto') autoDetectMood();
+    
+    $('musicTitle').textContent = file.name;
+    $('musicMeta').textContent = `${(file.size/1024/1024).toFixed(2)} MB · ${formatTime(state.duration)}`;
+    $('musicSource').textContent = source === 'upload' ? ' Upload' : ' Video';
+    $('musicInfo').classList.add('active');
+    
+    updateStats();
+    generateTitleSuggestions();
+    showToast('✅ Đã tải nhạc thành công!');
+  } catch (err) {
+    showToast('❌ Lỗi: ' + err.message);
+  }
+}
+
+// Image Upload
+function handleImages(files) {
+  const arr = Array.from(files).filter(f => f.type.startsWith('image/'));
+  if (!arr.length) return;
+  
+  let loaded = 0;
+  arr.forEach(file => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      state.images.push({ url, img, name: file.name });
+      loaded++;
+      if (loaded === arr.length) {
+        renderImageGrid();
+        updateStats();
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      showToast('⚠️ Lỗi tải ảnh: ' + file.name);
+    };
+    img.src = url;
+  });}
+
+function renderImageGrid() {
+  const grid = $('imageGrid');
+  grid.innerHTML = '';
+  state.images.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    div.innerHTML = `<img src="${item.url}" loading="lazy"><div class="remove">×</div>`;
+    div.querySelector('.remove').onclick = e => {
+      e.stopPropagation();
+      URL.revokeObjectURL(item.url);
+      state.images.splice(i, 1);
+      renderImageGrid();
+      updateStats();
+    };
+    grid.appendChild(div);
+  });
+}
+
+$('imgInput').addEventListener('change', e => handleImages(e.target.files));
+
+// Drag and Drop
+['dragenter', 'dragover'].forEach(ev => {
+  $('audioDropZone').addEventListener(ev, e => {
+    e.preventDefault();
+    $('audioDropZone').classList.add('drag');
+  });
+  $('videoDropZone').addEventListener(ev, e => {
+    e.preventDefault();
+    $('videoDropZone').classList.add('drag');
+  });
+  $('imgDropZone').addEventListener(ev, e => {
+    e.preventDefault();
+    $('imgDropZone').classList.add('drag');
+  });
+});
+
+['dragleave', 'drop'].forEach(ev => {
+  $('audioDropZone').addEventListener(ev, e => {
+    e.preventDefault();
+    $('audioDropZone').classList.remove('drag');
+  });
+  $('videoDropZone').addEventListener(ev, e => {
+    e.preventDefault();
+    $('videoDropZone').classList.remove('drag');
+  });
+  $('imgDropZone').addEventListener(ev, e => {
+    e.preventDefault();
+    $('imgDropZone').classList.remove('drag');  });
+});
+
+$('audioDropZone').addEventListener('drop', e => {
+  const files = e.dataTransfer.files;
+  if (files[0]) loadAudio(files[0], 'upload');
+});
+
+$('videoDropZone').addEventListener('drop', e => {
+  const files = e.dataTransfer.files;
+  if (files[0]) {
+    const event = { target: { files } };
+    $('videoInput').dispatchEvent(new Event('change'));
+  }
+});
+
+$('imgDropZone').addEventListener('drop', e => {
+  handleImages(e.dataTransfer.files);
+});
+
+// Audio Analysis (Optimized)
+function analyzeAudio() {
+  const buffer = state.audioBuffer;
+  const data = buffer.getChannelData(0);
+  const sampleRate = buffer.sampleRate;
+  
+  // Energy (RMS) - Optimized with typed arrays
+  const squared = new Float32Array(data.length);
+  for (let i = 0; i < data.length; i++) {
+    squared[i] = data[i] * data[i];
+  }
+  const sum = squared.reduce((a, b) => a + b, 0);
+  state.energy = Math.sqrt(sum / data.length);
+  
+  // BPM Detection - Optimized
+  state.bpm = detectBPMFast(data, sampleRate);
+}
+
+function detectBPMFast(data, sampleRate) {
+  const blockSize = 1024; // Smaller for speed
+  const numBlocks = Math.floor(data.length / blockSize);
+  if (numBlocks < 10) return 120;
+  
+  const energies = new Float32Array(numBlocks);
+  for (let i = 0; i < numBlocks; i++) {
+    let sum = 0;
+    for (let j = 0; j < blockSize; j++) {
+      const v = data[i * blockSize + j];
+      sum += v * v;
+    }    energies[i] = Math.sqrt(sum / blockSize);
+  }
+  
+  // Autocorrelation
+  let bestLag = 0, bestVal = 0;
+  const minLag = Math.floor(60 / 200 * energies.length / (data.length / sampleRate));
+  const maxLag = Math.floor(60 / 60 * energies.length / (data.length / sampleRate));
+  
+  for (let lag = minLag; lag < maxLag && lag < energies.length / 2; lag++) {
+    let sum = 0;
+    for (let i = 0; i < energies.length - lag; i++) {
+      sum += energies[i] * energies[i + lag];
+    }
+    if (sum > bestVal) {
+      bestVal = sum;
+      bestLag = lag;
+    }
+  }
+  
+  if (bestLag === 0) return 120;
+  const bpm = 60 / (bestLag * blockSize / sampleRate);
+  return Math.max(60, Math.min(200, bpm));
+}
+
+function autoDetectMood() {
+  const e = state.energy;
+  const b = state.bpm;
+  
+  if (b > 130 && e > 0.15) state.mood = 'energetic';
+  else if (b < 90 && e < 0.08) state.mood = 'sad';
+  else if (b < 110) state.mood = 'chill';
+  else if (b > 120) state.mood = 'epic';
+  else state.mood = 'romantic';
+  
+  document.querySelectorAll('.mood').forEach(m => {
+    m.classList.toggle('active', m.dataset.mood === state.mood);
+  });
+}
+
+// Mood Selection
+document.querySelectorAll('.mood').forEach(m => {
+  m.addEventListener('click', () => {
+    document.querySelectorAll('.mood').forEach(x => x.classList.remove('active'));
+    m.classList.add('active');
+    state.mood = m.dataset.mood;
+    if (state.mood === 'auto' && state.audioBuffer) autoDetectMood();
+    generateTitleSuggestions();
+  });
+});
+// Title Generator
+function generateTitleSuggestions() {
+  const moodTitles = {
+    energetic: ['🔥 Beat cực cháy', '⚡ Năng lượng bùng nổ', '🎵 Quẩy hết mình'],
+    chill: ['🌊 Chill nhẹ nhàng', ' Thư giãn cuối tuần', ' Night vibes'],
+    sad: ['️ Tâm trạng buồn', '💭 Deep thoughts', '🥀 Melancholy'],
+    epic: ['🔥 Epic moments', '⚔️ Chiến thắng', ' Đỉnh cao'],
+    romantic: ['💕 Love story', '💖 Romantic vibes', '💌 Gửi người thương']
+  };
+  
+  const platformTags = {
+    tiktok: ['#fyp #trending #viral', '#tiktokvietnam #xuhuong', '#music #mood'],
+    youtube: ['#musicvideo #trending', '#newmusic #viral', '#youtubeshorts'],
+    instagram: ['#reels #instagram', '#trending #viral', '#music #mood'],
+    reels: ['#reelsinstagram #trending', '#viralreels #music', '#explore'],
+    shorts: '#shorts #youtubeshorts #trending',
+    facebook: '#facebook #trending #viral'
+  };
+  
+  const mood = state.mood === 'auto' ? 'energetic' : state.mood;
+  const platform = state.currentPlatform;
+  
+  const titles = moodTitles[mood] || moodTitles.energetic;
+  const tags = platformTags[platform] || platformTags.tiktok;
+  
+  const suggestions = titles.map(t => t + ' ' + tags[Math.floor(Math.random() * tags.length)]);
+  
+  const container = $('titleSuggestions');
+  container.innerHTML = '';
+  suggestions.forEach(s => {
+    const span = document.createElement('span');
+    span.className = 'suggestion';
+    span.textContent = s;
+    span.onclick = () => {
+      $('videoTitle').value = s;
+      state.videoTitle = s;
+    };
+    container.appendChild(span);
+  });
+}
+
+$('videoTitle').addEventListener('input', e => {
+  state.videoTitle = e.target.value;
+});
+
+// Preview & Playback
+function initPreview() {
+  resizePreview();
+  window.addEventListener('resize', () => {
+    resizePreview();    resizeViz();
+  });
+  resizeViz();
+}
+
+function resizeViz() {
+  const rect = vizCanvas.parentElement.getBoundingClientRect();
+  vizCanvas.width = rect.width * devicePixelRatio;
+  vizCanvas.height = rect.height * devicePixelRatio;
+  vizCtx.scale(devicePixelRatio, devicePixelRatio);
+}
+
+function drawPreview(timestamp) {
+  if (!state.isPlaying) return;
+  
+  const ctx = previewCtx;
+  const w = previewCanvas.width;
+  const h = previewCanvas.height;
+  
+  // Clear with black
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, w, h);
+  
+  if (state.images.length === 0) {
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 32px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('Hãy thêm ảnh', w/2, h/2);
+    state.animationId = requestAnimationFrame(drawPreview);
+    return;
+  }
+  
+  const elapsed = (timestamp - state.startTime) / 1000;
+  const duration = parseFloat($('slideDuration').value);
+  const sens = parseFloat($('beatSensitivity').value);
+  
+  // Beat detection
+  let beatDetected = false;
+  if (state.analyser) {
+    const freqData = new Uint8Array(state.analyser.frequencyBinCount);
+    state.analyser.getByteFrequencyData(freqData);
+    let bass = 0;
+    for (let i = 0; i < 10; i++) bass += freqData[i];
+    bass /= 10 * 255;
+    if (bass * sens > 0.6) beatDetected = true;
+    drawVisualizer(freqData);
+  }
+  
+  // Image switching
+  const progress = (elapsed % duration) / duration;  const newIndex = Math.floor(elapsed / duration) % state.images.length;
+  state.currentImageIndex = newIndex;
+  
+  const img = state.images[state.currentImageIndex].img;
+  const trans = getTransition();
+  trans(ctx, img, progress, w, h);
+  
+  // Beat flash
+  if (beatDetected) {
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    ctx.fillRect(0, 0, w, h);
+  }
+  
+  // Overlay gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'rgba(0,0,0,0.3)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+  
+  // Title
+  if (state.videoTitle) {
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 28px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText(state.videoTitle, w/2, h - 100);
+  }
+  
+  state.animationId = requestAnimationFrame(drawPreview);
+}
+
+function drawVisualizer(freqData) {
+  const w = vizCanvas.width / devicePixelRatio;
+  const h = vizCanvas.height / devicePixelRatio;
+  vizCtx.clearRect(0, 0, w, h);
+  
+  const bars = 64;
+  const barW = w / bars;
+  for (let i = 0; i < bars; i++) {
+    const idx = Math.floor(i * freqData.length / bars);
+    const v = freqData[idx] / 255;
+    const barH = v * h;
+    vizCtx.fillStyle = `hsl(${250 + i*2}, 80%, 60%)`;
+    vizCtx.fillRect(i * barW, h - barH, barW - 2, barH);
+  }
+}
+
+// Transitions
+const transitions = {
+  fade: (ctx, img, p, w, h) => {    ctx.globalAlpha = p;
+    drawCover(ctx, img, w, h);
+    ctx.globalAlpha = 1;
+  },
+  zoom: (ctx, img, p, w, h) => {
+    const scale = 1 + p * 0.3;
+    ctx.save();
+    ctx.translate(w/2, h/2);
+    ctx.scale(scale, scale);
+    ctx.translate(-w/2, -h/2);
+    drawCover(ctx, img, w, h);
+    ctx.restore();
+  },
+  kenburns: (ctx, img, p, w, h) => {
+    const scale = 1 + p * 0.2;
+    const tx = Math.sin(p * Math.PI) * 30;
+    ctx.save();
+    ctx.translate(w/2 + tx, h/2);
+    ctx.scale(scale, scale);
+    ctx.translate(-w/2, -h/2);
+    drawCover(ctx, img, w, h);
+    ctx.restore();
+  },
+  flash: (ctx, img, p, w, h) => {
+    drawCover(ctx, img, w, h);
+    if (p < 0.1) {
+      ctx.fillStyle = `rgba(255,255,255,${1 - p*10})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+};
+
+function drawCover(ctx, img, w, h) {
+  const ir = img.width / img.height;
+  const cr = w / h;
+  let sw, sh, sx, sy;
+  if (ir > cr) {
+    sh = img.height; sw = sh * cr;
+    sx = (img.width - sw)/2; sy = 0;
+  } else {
+    sw = img.width; sh = sw / cr;
+    sx = 0; sy = (img.height - sh)/2;
+  }
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+}
+
+function getTransition() {
+  const t = $('transitionType').value;
+  if (t !== 'auto') return transitions[t] || transitions.fade;
+  const map = {    energetic: transitions.flash,
+    chill: transitions.kenburns,
+    sad: transitions.fade,
+    epic: transitions.zoom,
+    romantic: transitions.kenburns
+  };
+  return map[state.mood] || transitions.fade;
+}
+
+// Playback Controls
+$('playBtn').addEventListener('click', () => {
+  if (state.images.length === 0) { showToast('️ Thêm ảnh trước!'); return; }
+  if (!state.audioBuffer) { showToast('️ Thêm nhạc trước!'); return; }
+  startPlayback();
+});
+
+function startPlayback() {
+  if (state.isPlaying) return;
+  state.isPlaying = true;
+  $('playBtn').classList.add('hidden');
+  $('previewOverlay').style.opacity = '0';
+  
+  const ctx = state.audioContext;
+  state.source = ctx.createBufferSource();
+  state.source.buffer = state.audioBuffer;
+  state.analyser = ctx.createAnalyser();
+  state.analyser.fftSize = 512;
+  state.source.connect(state.analyser);
+  state.analyser.connect(ctx.destination);
+  state.source.start(0);
+  state.startTime = performance.now();
+  
+  state.source.onended = () => {
+    state.isPlaying = false;
+    $('playBtn').classList.remove('hidden');
+    $('previewOverlay').style.opacity = '1';
+  };
+  
+  requestAnimationFrame(drawPreview);
+}
+
+// Generate Video
+$('generateBtn').addEventListener('click', generateVideo);
+
+async function generateVideo() {
+  if (state.isRecording) return;
+  if (state.images.length === 0) { showToast('⚠️ Thêm ảnh trước!'); return; }
+  if (!state.audioBuffer) { showToast('⚠️ Thêm nhạc trước!'); return; }
+  
+  state.isRecording = true;  $('renderProgress').classList.add('active');
+  $('renderProgressFill').style.width = '0%';
+  $('renderProgressText').textContent = '🎬 Đang render video...';
+  $('generateBtn').disabled = true;
+  
+  const config = state.platformConfig[state.currentPlatform];
+  previewCanvas.width = config.w;
+  previewCanvas.height = config.h;
+  
+  const stream = previewCanvas.captureStream(30);
+  
+  // Add audio
+  if (state.audioBuffer) {
+    const audioCtx = new AudioContext();
+    const src = audioCtx.createBufferSource();
+    src.buffer = state.audioBuffer;
+    const dest = audioCtx.createMediaStreamDestination();
+    src.connect(dest);
+    src.start(0);
+    dest.stream.getAudioTracks().forEach(t => stream.addTrack(t));
+  }
+  
+  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
+    ? 'video/webm;codecs=vp9' 
+    : 'video/webm';
+  
+  state.recordedChunks = [];
+  state.mediaRecorder = new MediaRecorder(stream, {
+    mimeType,
+    videoBitsPerSecond: 8000000
+  });
+  
+  state.mediaRecorder.ondataavailable = e => {
+    if (e.data.size > 0) state.recordedChunks.push(e.data);
+  };
+  
+  state.mediaRecorder.onstop = () => {
+    const blob = new Blob(state.recordedChunks, { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    
+    // Download
+    const a = document.createElement('a');
+    a.href = url;
+    const ext = 'webm';
+    a.download = `moodbeat_${state.currentPlatform}_${Date.now()}.${ext}`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    state.isRecording = false;
+    $('renderProgress').classList.remove('active');    $('generateBtn').disabled = false;
+    showToast('✅ Video đã tải về!');
+  };
+  
+  state.mediaRecorder.start();
+  
+  // Play through
+  const ctx = state.audioContext || new AudioContext();
+  const src = ctx.createBufferSource();
+  src.buffer = state.audioBuffer;
+  const analyser = ctx.createAnalyser();
+  analyser.fftSize = 512;
+  src.connect(analyser);
+  state.analyser = analyser;
+  src.start(0);
+  state.startTime = performance.now();
+  state.isPlaying = true;
+  
+  const duration = state.audioBuffer.duration;
+  const updateProgress = () => {
+    const elapsed = (performance.now() - state.startTime) / 1000;
+    const pct = Math.min(100, (elapsed / duration) * 100);
+    $('renderProgressFill').style.width = pct + '%';
+    $('renderProgressText').textContent = `⏳ ${Math.round(pct)}% · ${formatTime(elapsed)}/${formatTime(duration)}`;
+    if (elapsed < duration) requestAnimationFrame(updateProgress);
+  };
+  updateProgress();
+  requestAnimationFrame(drawPreview);
+  
+  setTimeout(() => {
+    state.mediaRecorder.stop();
+    state.isPlaying = false;
+  }, duration * 1000 + 500);
+}
+
+// Share Functions
+$('shareTiktok').addEventListener('click', () => shareToPlatform('tiktok'));
+$('shareYoutube').addEventListener('click', () => shareToPlatform('youtube'));
+$('shareFacebook').addEventListener('click', () => shareToPlatform('facebook'));
+
+function shareToPlatform(platform) {
+  if (!state.audioBuffer || state.images.length === 0) {
+    showToast('⚠️ Tạo video trước!');
+    return;
+  }
+  
+  showToast('📥 Tải video về và upload thủ công lên ' + platform);
+  setTimeout(() => {
+    $('generateBtn').click();
+  }, 1000);}
+
+// Utilities
+function formatTime(s) {
+  const m = Math.floor(s/60);
+  const sec = Math.floor(s%60);
+  return `${m}:${sec.toString().padStart(2,'0')}`;
+}
+
+function updateStats() {
+  $('statBPM').textContent = state.bpm ? Math.round(state.bpm) : '—';
+  $('statEnergy').textContent = state.energy ? Math.round(state.energy*100) + '%' : '—';
+  $('statImages').textContent = state.images.length;
+  $('statDuration').textContent = state.duration ? formatTime(state.duration) : '—';
+}
+
+function showToast(msg, ms = 3000, type = '') {
+  const toast = $('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show ' + type;
+  setTimeout(() => toast.classList.remove('show'), ms);
+}
+
+// Reset
+$('resetBtn').addEventListener('click', () => {
+  state.images.forEach(img => URL.revokeObjectURL(img.url));
+  state.images = [];
+  state.audioBuffer = null;
+  state.bpm = 0;
+  state.energy = 0;
+  state.duration = 0;
+  $('imageGrid').innerHTML = '';
+  $('musicInfo').classList.remove('active');
+  previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+  vizCtx.clearRect(0, 0, vizCanvas.width, vizCanvas.height);
+  $('playBtn').classList.remove('hidden');
+  $('previewOverlay').style.opacity = '1';
+  $('videoProgress').classList.remove('active');
+  $('urlProgress').classList.remove('active');
+  $('renderProgress').classList.remove('active');
+  updateStats();
+  showToast('🔄 Đã reset');
+});
+
+// Settings
+$('beatSensitivity').addEventListener('input', e => {
+  $('beatVal').textContent = parseFloat(e.target.value).toFixed(1);
+});
+$('slideDuration').addEventListener('input', e => {
+  $('durVal').textContent = parseFloat(e.target.value).toFixed(1) + 's';});
+
+// Init
+initPreview();
+updatePlatformStats();
+updateStats();
+
+// Draw initial screen
+previewCtx.fillStyle = '#0f0f25';
+previewCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+previewCtx.fillStyle = '#8a8ab0';
+previewCtx.font = 'bold 32px Inter';
+previewCtx.textAlign = 'center';
+previewCtx.fillText(' MoodBeat Studio', previewCanvas.width/2, previewCanvas.height/2 - 20);
+previewCtx.font = '16px Inter';
+previewCtx.fillText('v3.0 Ultra Fast Edition', previewCanvas.width/2, previewCanvas.height/2 + 20);
+
+// Preload FFmpeg
+initFFmpeg();
+</script>
+</body>
+</html>
