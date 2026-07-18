@@ -1,12 +1,27 @@
 {
   "name": "moodbeat-studio",
   "version": "4.0.0",
-  "description": "Video editor with FFmpeg.wasm - TikTok/Reels & YouTube support",
+  "description": "🎵 MoodBeat Studio - AI Music Video Creator. Tạo video từ ảnh và nhạc tự động, chuyên nghiệp.",
   "main": "index.html",
   "scripts": {
-    "start": "serve .",
+    "start": "npx serve .",
+    "dev": "npx serve .",
+    "build": "echo 'No build needed'",
     "deploy": "vercel --prod"
   },
+  "keywords": [
+    "video-editor",
+    "ai-video",
+    "music-video",
+    "slideshow",
+    "ffmpeg",
+    "tiktok",
+    "youtube",
+    "reels",
+    "shorts"
+  ],
+  "author": "MoodBeat Team",
+  "license": "MIT",
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.7",
     "@ffmpeg/util": "^0.12.1"
@@ -14,5 +29,13 @@
   "devDependencies": {
     "serve": "^14.0.0",
     "vercel": "^32.0.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/moodbeat-studio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/moodbeat-studio/issues"
+  },
+  "homepage": "https://moodbeat-studio.vercel.app"
 }
