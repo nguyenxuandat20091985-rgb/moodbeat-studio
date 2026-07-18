@@ -3,7 +3,6 @@
    Version: 4.0
    ============================================ */
 
-/* ---------- RESET ---------- */
 *,
 *::before,
 *::after {
@@ -80,7 +79,7 @@ body {
     padding: 0 24px;
 }
 
-/* ---------- TYPOGRAPHY ---------- */
+/* --- TYPOGRAPHY --- */
 .gradient-text {
     background: var(--gradient-primary);
     -webkit-background-clip: text;
@@ -127,7 +126,7 @@ body {
     text-align: center;
 }
 
-/* ---------- BUTTONS ---------- */
+/* --- BUTTONS --- */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -189,7 +188,7 @@ body {
     font-size: 14px;
 }
 
-/* ---------- NAVBAR ---------- */
+/* --- NAVBAR --- */
 .navbar {
     position: fixed;
     top: 0;
@@ -306,7 +305,7 @@ body {
     padding: 4px;
 }
 
-/* ---------- HERO ---------- */
+/* --- HERO --- */
 .hero {
     padding: 140px 0 100px;
     position: relative;
@@ -554,7 +553,7 @@ body {
     transform: translate(-50%, -50%);
 }
 
-/* ---------- PLATFORMS ---------- */
+/* --- PLATFORMS --- */
 .platforms {
     padding: var(--section-padding);
     text-align: center;
@@ -615,7 +614,7 @@ body {
     color: var(--primary-light);
 }
 
-/* ---------- FEATURES ---------- */
+/* --- FEATURES --- */
 .features {
     padding: var(--section-padding);
     background: var(--bg-secondary);
@@ -667,7 +666,7 @@ body {
     line-height: 1.7;
 }
 
-/* ---------- HOW IT WORKS ---------- */
+/* --- HOW IT WORKS --- */
 .how-it-works {
     padding: var(--section-padding);
     text-align: center;
@@ -737,7 +736,7 @@ body {
     font-size: 20px;
 }
 
-/* ---------- PRICING ---------- */
+/* --- PRICING --- */
 .pricing {
     padding: var(--section-padding);
     background: var(--bg-secondary);
@@ -844,7 +843,7 @@ body {
     font-size: 14px;
 }
 
-/* ---------- TESTIMONIALS ---------- */
+/* --- TESTIMONIALS --- */
 .testimonials {
     padding: var(--section-padding);
     text-align: center;
@@ -915,7 +914,7 @@ body {
     color: var(--text-muted);
 }
 
-/* ---------- CTA ---------- */
+/* --- CTA --- */
 .cta {
     padding: var(--section-padding);
     background: var(--bg-secondary);
@@ -971,7 +970,7 @@ body {
     margin-bottom: 0 !important;
 }
 
-/* ---------- FOOTER ---------- */
+/* --- FOOTER --- */
 .footer {
     padding: 60px 0 30px;
     border-top: 1px solid var(--border-color);
@@ -1055,7 +1054,7 @@ body {
     color: var(--secondary);
 }
 
-/* ---------- BACK TO TOP ---------- */
+/* --- BACK TO TOP --- */
 .back-to-top {
     position: fixed;
     bottom: 30px;
@@ -1085,7 +1084,7 @@ body {
     box-shadow: 0 8px 40px rgba(139, 92, 246, 0.45);
 }
 
-/* ---------- RESPONSIVE ---------- */
+/* --- RESPONSIVE --- */
 @media (max-width: 1024px) {
     .hero-grid {
         grid-template-columns: 1fr;
@@ -1252,7 +1251,7 @@ body {
     }
 }
 
-/* ---------- ANIMATIONS ---------- */
+/* --- ANIMATIONS --- */
 @keyframes fadeInUp {
     from {
         opacity: 0;
