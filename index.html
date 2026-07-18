@@ -6,17 +6,17 @@
     <meta name="theme-color" content="#0f0f25">
     <title>MoodBeat Studio v4.0 Pro</title>
     
-    <!-- FFmpeg.wasm v0.12.7 - ESM modules -->
+    <!-- Sử dụng jsdelivr thay vì unpkg để tránh CORS -->
     <script type="module">
-        import { FFmpeg } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/esm/index.js';
-        import { fetchFile, toBlobURL } from 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js';
+        import { FFmpeg } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.7/dist/esm/index.js';
+        import { fetchFile, toBlobURL } from 'https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js';
         
         window.FFmpeg = FFmpeg;
         window.fetchFile = fetchFile;
         window.toBlobURL = toBlobURL;
         window.ffmpegLoaded = true;
         
-        console.log('✅ FFmpeg modules loaded');
+        console.log('✅ FFmpeg modules loaded from jsdelivr');
         document.dispatchEvent(new Event('ffmpeg-loaded'));
     </script>
     
@@ -46,6 +46,58 @@
         }
         .header span { font-size: 11px; color: var(--text-muted); display: block; font-weight: 500; }
         .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        
+        /* Lyrics Display - NEW */
+        .lyrics-box {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+        .lyrics-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(236,72,153,0.05));
+            pointer-events: none;
+        }
+        .lyrics-text {
+            font-size: 14px;
+            line-height: 1.8;
+            color: var(--text);
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 200px;
+            overflow-y: auto;
+            position: relative;
+            z-index: 1;
+        }
+        .lyrics-text .highlight {
+            color: var(--secondary);
+            font-weight: 600;
+        }
+        .lyrics-text .lyric-line {
+            opacity: 0.7;
+            transition: all 0.3s;
+        }
+        .lyrics-text .lyric-line.active {
+            opacity: 1;
+            color: var(--primary);
+        }
+        .lyrics-timestamp {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 12px;
+            border-top: 1px solid var(--border);
+            padding-top: 12px;
+        }
         
         .platform-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
         .platform-card {
@@ -128,6 +180,7 @@
         }
         .btn-download:hover:not(:disabled) { transform: translateY(-2px); }
         .btn-download:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-full { grid-column: 1 / -1; }
         
         .toast-container {
             position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -156,6 +209,7 @@
         }
         .status-badge.active { display: block; }
         .status-badge.loading { color: var(--warning); border-color: var(--warning); background: rgba(245,158,11,0.2); }
+        .status-badge.error { color: var(--error); border-color: var(--error); background: rgba(239,68,68,0.2); }
         
         .file-info {
             margin-top: 16px; padding: 12px;
@@ -179,9 +233,25 @@
         .debug-panel .log-entry.success { color: var(--success); }
         .debug-panel .log-entry.warning { color: var(--warning); }
         
+        .cors-fix-banner {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid var(--error);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: none;
+            font-size: 13px;
+            color: var(--text);
+        }
+        .cors-fix-banner a {
+            color: var(--accent);
+            text-decoration: underline;
+        }
+        
         @media (max-width: 640px) {
             .platform-selector { grid-template-columns: 1fr; }
             .action-buttons { grid-template-columns: 1fr; }
+            .lyrics-text { font-size: 13px; }
         }
     </style>
 </head>
@@ -194,6 +264,28 @@
     <div class="status-badge" id="statusBadge">⚡ FFmpeg Ready</div>
 
     <div class="container">
+        <!-- CORS Fix Banner -->
+        <div class="cors-fix-banner" id="corsBanner">
+            ⚠️ Đang gặp lỗi CORS. <a href="#" onclick="location.reload()">Tải lại trang</a> hoặc 
+            <a href="#" onclick="window.open('https://moodbeat-studio.vercel.app','_blank')">mở link này</a> để fix.
+        </div>
+
+        <!-- Lyrics Display - NEW -->
+        <div class="lyrics-box" id="lyricsBox">
+            <div class="lyrics-text" id="lyricsText">
+                <div class="lyric-line">Chúng con can anh dao</div>
+                <div class="lyric-line">Tại sao giờ anh mới biết anh sai?</div>
+                <div class="lyric-line">Sao giờ anh mới xem em là ảnh ban mai?</div>
+                <div class="lyric-line">Làm em đau như thế rồi</div>
+                <div class="lyric-line">Nay anh đòi quay lại</div>
+                <div class="lyric-line">Luôn miệng nói yêu em</div>
+                <div class="lyric-line">Dù chưa từng có phút giây muốn bên em</div>
+                <div class="lyric-line">Chỉ đến khi mà em rời xa</div>
+                <div class="lyric-line">Anh mới nhỏ những phút êm đềm</div>
+            </div>
+            <div class="lyrics-timestamp" id="lyricsTimestamp">⏱️ 0:00 / 0:56</div>
+        </div>
+
         <!-- Platform Selector -->
         <div class="platform-selector">
             <div class="platform-card active" data-platform="tiktok" data-width="1080" data-height="1920" data-bitrate="3000k">
@@ -263,7 +355,7 @@
         <div class="action-buttons">
             <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
             <button class="btn btn-primary" id="processBtn" disabled>🎬 Xử lý Video</button>
-            <button class="btn btn-download" id="downloadBtn" disabled style="grid-column: 1 / -1;">⬇️ Tải xuống đã xử lý</button>
+            <button class="btn btn-download btn-full" id="downloadBtn" disabled>⬇️ Tải xuống đã xử lý</button>
         </div>
 
         <!-- Debug Panel -->
@@ -278,7 +370,7 @@
     <script>
         // ============================================================
         //  MOODBEAT STUDIO v4.0 - FULL APP LOGIC
-        //  Bổ sung: tính năng mới, fix lỗi không ấn được
+        //  FIXED: CORS error with Worker
         // ============================================================
         
         (function() {
@@ -308,6 +400,9 @@
             const dropIcon = document.getElementById('dropIcon');
             const dropTitle = document.getElementById('dropTitle');
             const dropSub = document.getElementById('dropSub');
+            const lyricsText = document.getElementById('lyricsText');
+            const lyricsTimestamp = document.getElementById('lyricsTimestamp');
+            const corsBanner = document.getElementById('corsBanner');
             
             // ----- State -----
             let selectedFile = null;
@@ -317,6 +412,8 @@
             let ffmpegInstance = null;
             let platform = 'tiktok';
             let videoDuration = 0;
+            let loadAttempts = 0;
+            const MAX_LOAD_ATTEMPTS = 3;
             
             // ----- Toast system -----
             function showToast(message, type = 'info', duration = 4000) {
@@ -326,7 +423,9 @@
                 const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
                 toast.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
                 container.appendChild(toast);
-                setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(20px)'; 
+                setTimeout(() => { 
+                    toast.style.opacity = '0'; 
+                    toast.style.transform = 'translateY(20px)'; 
                     setTimeout(() => toast.remove(), 300); 
                 }, duration);
             }
@@ -362,7 +461,8 @@
                 statusBadge.textContent = text;
                 statusBadge.className = 'status-badge active';
                 if (type === 'loading') statusBadge.classList.add('loading');
-                else statusBadge.classList.remove('loading');
+                else if (type === 'error') statusBadge.classList.add('error');
+                else statusBadge.classList.remove('loading', 'error');
             }
             
             // ----- Platform selection -----
@@ -373,47 +473,79 @@
                     platform = this.dataset.platform;
                     const width = this.dataset.width;
                     const height = this.dataset.height;
-                    // Update preview container aspect ratio
                     previewContainer.className = 'preview-container';
                     if (platform === 'youtube') previewContainer.classList.add('wide');
                     debugLog(`Đã chọn nền tảng: ${platform} (${width}x${height})`, 'info');
-                    // Update process button text
                     processBtn.textContent = `🎬 Xử lý cho ${platform === 'tiktok' ? 'TikTok/Reels' : 'YouTube/FB'}`;
                 });
             });
             
-            // ----- Load FFmpeg -----
+            // ----- Load FFmpeg (fixed CORS) -----
             async function loadFFmpeg() {
+                if (loadAttempts >= MAX_LOAD_ATTEMPTS) {
+                    debugLog('❌ Đã thử tải FFmpeg quá nhiều lần. Vui lòng tải lại trang.', 'error');
+                    showToast('Không thể tải FFmpeg. Vui lòng tải lại trang.', 'error');
+                    corsBanner.style.display = 'block';
+                    return false;
+                }
+                
+                loadAttempts++;
+                
                 try {
                     updateBadge('⏳ Đang tải FFmpeg...', 'loading');
-                    debugLog('Bắt đầu tải FFmpeg.wasm...', 'info');
+                    debugLog(`Bắt đầu tải FFmpeg.wasm (lần ${loadAttempts})...`, 'info');
                     
+                    // Lấy từ window (đã import từ module)
                     const { FFmpeg } = window;
                     const { toBlobURL } = window;
                     
                     if (!FFmpeg) {
-                        throw new Error('FFmpeg module not loaded');
+                        throw new Error('FFmpeg module not loaded. Vui lòng kiểm tra kết nối mạng.');
                     }
                     
                     ffmpegInstance = new FFmpeg();
                     
-                    // Tải core
-                    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
-                    await ffmpegInstance.load({
-                        coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-                        wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-                    });
+                    // Dùng CDN thay thế để tránh CORS
+                    const baseURL = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/umd';
+                    
+                    try {
+                        await ffmpegInstance.load({
+                            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                        });
+                    } catch (corsError) {
+                        // Nếu vẫn lỗi CORS, thử dùng unpkg với proxy
+                        debugLog('⚠️ Lỗi CORS với jsdelivr, thử dùng unpkg...', 'warning');
+                        const fallbackURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+                        await ffmpegInstance.load({
+                            coreURL: await toBlobURL(`${fallbackURL}/ffmpeg-core.js`, 'text/javascript'),
+                            wasmURL: await toBlobURL(`${fallbackURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                        });
+                    }
                     
                     isFFmpegReady = true;
                     updateBadge('⚡ FFmpeg sẵn sàng', 'ready');
                     debugLog('✅ FFmpeg.wasm đã tải thành công!', 'success');
                     showToast('FFmpeg đã sẵn sàng!', 'success');
                     processBtn.disabled = !selectedFile;
+                    corsBanner.style.display = 'none';
                     return true;
+                    
                 } catch (error) {
                     debugLog(`❌ Lỗi tải FFmpeg: ${error.message}`, 'error');
-                    updateBadge('❌ Lỗi FFmpeg', 'ready');
-                    showToast('Không thể tải FFmpeg. Vui lòng tải lại trang.', 'error');
+                    updateBadge('❌ Lỗi FFmpeg', 'error');
+                    showToast(`Không thể tải FFmpeg: ${error.message}`, 'error');
+                    
+                    if (error.message.includes('Worker') || error.message.includes('origin')) {
+                        corsBanner.style.display = 'block';
+                        debugLog('💡 Hướng dẫn fix CORS: Thêm header COEP/COOP hoặc dùng extension CORS Unblock', 'warning');
+                    }
+                    
+                    // Thử lại sau 3s
+                    if (loadAttempts < MAX_LOAD_ATTEMPTS) {
+                        debugLog(`⏳ Thử lại sau 3 giây... (lần ${loadAttempts + 1}/${MAX_LOAD_ATTEMPTS})`, 'warning');
+                        setTimeout(loadFFmpeg, 3000);
+                    }
                     return false;
                 }
             }
@@ -423,8 +555,6 @@
                 if (!file) return;
                 
                 // Kiểm tra loại file
-                const validTypes = ['video/mp4', 'video/quicktime', 'video/webm', 
-                                   'audio/mpeg', 'audio/wav', 'image/jpeg', 'image/png'];
                 const isVideo = file.type.startsWith('video/');
                 const isAudio = file.type.startsWith('audio/');
                 const isImage = file.type.startsWith('image/');
@@ -437,6 +567,7 @@
                 selectedFile = file;
                 processedBlob = null;
                 downloadBtn.disabled = true;
+                downloadBtn.textContent = '⬇️ Tải xuống đã xử lý';
                 
                 // Hiển thị thông tin file
                 fileName.textContent = file.name;
@@ -463,15 +594,12 @@
                         previewOverlay.style.display = 'flex';
                         debugLog(`Video loaded: ${this.duration}s, ${this.videoWidth}x${this.videoHeight}`, 'info');
                     };
-                    // Nếu là ảnh hoặc audio thì không hiển thị preview video
                 } else if (isImage) {
                     videoPreview.onloadedmetadata = null;
                     videoPreview.style.objectFit = 'contain';
-                    // Image preview sẽ hiển thị
                     previewSection.classList.add('active');
                     previewOverlay.style.display = 'none';
                     fileDuration.textContent = '--:--';
-                    // Tự động xử lý ảnh
                     setTimeout(() => {
                         showToast('Ảnh đã sẵn sàng để xử lý!', 'success');
                     }, 500);
@@ -493,6 +621,8 @@
                 if (!selectedFile || !ffmpegInstance || isProcessing) return;
                 if (!isFFmpegReady) {
                     showToast('FFmpeg chưa sẵn sàng, vui lòng đợi...', 'warning');
+                    // Thử tải lại
+                    loadFFmpeg();
                     return;
                 }
                 
@@ -529,17 +659,14 @@
                     
                     // Nếu là ảnh, thêm độ dài
                     if (isImage) {
-                        // Ảnh -> video 5 giây
                         args.push('-loop', '1', '-t', '5');
                         filter = `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2`;
                     }
                     
                     // Nếu là audio, thêm ảnh nền tĩnh
                     if (isAudio) {
-                        // Tạo ảnh nền đen
                         const bgCmd = `color=c=black:s=${targetWidth}x${targetHeight}:d=30,format=yuv420p`;
                         args = ['-f', 'lavfi', '-i', bgCmd, '-i', 'input', '-c:v', 'libx264', '-c:a', 'aac', '-shortest'];
-                        // Không scale thêm
                         filter = null;
                     }
                     
@@ -547,7 +674,6 @@
                         args.push('-vf', filter);
                     }
                     
-                    // Nén video
                     args.push('-b:v', bitrate);
                     args.push('-maxrate', bitrate);
                     args.push('-bufsize', '6000k');
@@ -600,14 +726,13 @@
                 } catch (error) {
                     debugLog(`❌ Lỗi xử lý: ${error.message}`, 'error');
                     showToast(`Lỗi: ${error.message}`, 'error');
-                    updateBadge('❌ Lỗi', 'ready');
+                    updateBadge('❌ Lỗi', 'error');
                 } finally {
                     isProcessing = false;
                     processBtn.disabled = false;
                     processBtn.textContent = '🎬 Xử lý Video';
                     dropZone.classList.remove('processing');
                     
-                    // Dọn dẹp
                     try {
                         await ffmpegInstance.deleteFile('input');
                         await ffmpegInstance.deleteFile('output.mp4');
@@ -653,17 +778,14 @@
                 processBtn.textContent = '🎬 Xử lý Video';
                 debugLog('🔄 Đã reset toàn bộ', 'warning');
                 showToast('Đã reset', 'info');
-                // Reset badge
                 if (isFFmpegReady) {
                     updateBadge('⚡ FFmpeg sẵn sàng', 'ready');
                 }
-                // Clear video preview
                 videoPreview.onloadedmetadata = null;
+                previewOverlay.innerHTML = '<div class="play-button">▶</div>';
             }
             
             // ----- Event listeners -----
-            
-            // Platform cards - click handled above
             
             // Drop zone - click
             dropZone.addEventListener('click', () => {
@@ -732,7 +854,6 @@
                 loadFFmpeg();
             } else {
                 document.addEventListener('ffmpeg-loaded', loadFFmpeg);
-                // Fallback: check after 3s
                 setTimeout(() => {
                     if (!isFFmpegReady) {
                         if (window.ffmpegLoaded) {
@@ -745,7 +866,7 @@
                 }, 3000);
             }
             
-            // Auto load after 5s if not loaded
+            // Auto load after 5s
             setTimeout(() => {
                 if (!isFFmpegReady && !window.ffmpegLoaded) {
                     debugLog('⚠️ Tải FFmpeg tự động...', 'warning');
