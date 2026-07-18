@@ -4,6 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="MoodBeat Studio - Công cụ xử lý video chuyên nghiệp với AI, hỗ trợ TikTok, Reels, YouTube" />
+    <meta name="keywords" content="video editor, AI video, TikTok, Reels, YouTube, FFmpeg" />
+    <meta name="author" content="MoodBeat Studio" />
+    
+    <!-- Open Graph / Social Media -->
+    <meta property="og:title" content="MoodBeat Studio - Video Editor Pro" />
+    <meta property="og:description" content="Biến ý tưởng thành video đỉnh cao với AI. Hỗ trợ TikTok, Reels, YouTube." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://moodbeat-studio.vercel.app" />
+    <meta property="og:image" content="https://moodbeat-studio.vercel.app/assets/images/og-image.jpg" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="MoodBeat Studio - Video Editor Pro" />
+    <meta name="twitter:description" content="Biến ý tưởng thành video đỉnh cao với AI" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>" />
+    
     <title>MoodBeat Studio - Video Editor Pro</title>
     
     <!-- Fonts -->
@@ -32,6 +51,7 @@
                     <li><a href="#how-it-works">Cách dùng</a></li>
                     <li><a href="#pricing">Bảng giá</a></li>
                     <li><a href="#testimonials">Đánh giá</a></li>
+                    <li><a href="#faq">FAQ</a></li>
                 </ul>
                 <div class="nav-actions">
                     <a href="#download" class="btn btn-primary btn-sm">
@@ -64,8 +84,8 @@
                         Tạo video chất lượng cao chỉ với vài cú click.
                     </p>
                     <div class="hero-buttons">
-                        <a href="#download" class="btn btn-primary btn-lg">
-                            <i class="fas fa-play"></i> Bắt đầu ngay
+                        <a href="#demo" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play"></i> Dùng thử ngay
                         </a>
                         <a href="#features" class="btn btn-outline btn-lg">
                             <i class="fas fa-info-circle"></i> Tìm hiểu thêm
@@ -91,7 +111,7 @@
                 <div class="hero-visual">
                     <div class="hero-video-wrapper">
                         <div class="hero-video-placeholder">
-                            <div class="play-circle">
+                            <div class="play-circle" id="heroPlayBtn">
                                 <i class="fas fa-play"></i>
                             </div>
                             <img src="https://placehold.co/600x800/8b5cf6/ffffff?text=MoodBeat+Studio" alt="MoodBeat Studio Preview" class="hero-image" />
@@ -113,6 +133,21 @@
             <div class="shape shape-1"></div>
             <div class="shape shape-2"></div>
             <div class="shape shape-3"></div>
+        </div>
+    </section>
+
+    <!-- ====== CLIENTS / PARTNERS ====== -->
+    <section class="clients" id="clients">
+        <div class="container">
+            <p class="clients-label">Được tin dùng bởi</p>
+            <div class="clients-grid">
+                <div class="client-logo">🎵 Spotify</div>
+                <div class="client-logo">📺 Netflix</div>
+                <div class="client-logo">🎬 Adobe</div>
+                <div class="client-logo">📱 TikTok</div>
+                <div class="client-logo">▶️ YouTube</div>
+                <div class="client-logo">🎮 Unity</div>
+            </div>
         </div>
     </section>
 
@@ -232,6 +267,41 @@
         </div>
     </section>
 
+    <!-- ====== DEMO / TRY NOW ====== -->
+    <section class="demo" id="demo">
+        <div class="container">
+            <div class="demo-wrapper">
+                <div class="demo-content">
+                    <span class="section-label">Dùng thử ngay</span>
+                    <h2 class="section-title">Trải nghiệm <span class="gradient-text">miễn phí</span></h2>
+                    <p>Không cần đăng ký, không cần thẻ tín dụng. Bắt đầu tạo video ngay hôm nay.</p>
+                    <div class="demo-actions">
+                        <a href="#" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play"></i> Dùng thử ngay
+                        </a>
+                        <a href="#" class="btn btn-outline btn-lg">
+                            <i class="fas fa-video"></i> Xem demo
+                        </a>
+                    </div>
+                </div>
+                <div class="demo-stats">
+                    <div class="demo-stat">
+                        <span class="demo-number">0</span>
+                        <span class="demo-label">Không cần đăng ký</span>
+                    </div>
+                    <div class="demo-stat">
+                        <span class="demo-number">100%</span>
+                        <span class="demo-label">Trên trình duyệt</span>
+                    </div>
+                    <div class="demo-stat">
+                        <span class="demo-number">14</span>
+                        <span class="demo-label">Ngày dùng thử</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ====== PRICING ====== -->
     <section class="pricing" id="pricing">
         <div class="container">
@@ -334,6 +404,52 @@
         </div>
     </section>
 
+    <!-- ====== FAQ ====== -->
+    <section class="faq" id="faq">
+        <div class="container">
+            <div class="section-label">Câu hỏi thường gặp</div>
+            <h2 class="section-title">Giải đáp <span class="gradient-text">thắc mắc</span></h2>
+            <div class="faq-grid">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>MoodBeat Studio có miễn phí không?</h3>
+                        <span class="faq-toggle"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Có! MoodBeat Studio có gói miễn phí với các tính năng cơ bản. Bạn có thể nâng cấp lên Pro để sử dụng tất cả tính năng.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Tôi có cần cài đặt phần mềm không?</h3>
+                        <span class="faq-toggle"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Không! MoodBeat Studio hoạt động hoàn toàn trên trình duyệt. Bạn chỉ cần mở trang web và bắt đầu sử dụng.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Dữ liệu của tôi có an toàn không?</h3>
+                        <span class="faq-toggle"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Rất an toàn! Tất cả xử lý đều diễn ra trên trình duyệt của bạn. Dữ liệu không bao giờ được gửi lên server.</p>
+                    </div>
+                </div>
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h3>Những định dạng nào được hỗ trợ?</h3>
+                        <span class="faq-toggle"><i class="fas fa-plus"></i></span>
+                    </div>
+                    <div class="faq-answer">
+                        <p>Hỗ trợ MP4, MOV, WebM, MP3, WAV, JPG, PNG và nhiều định dạng khác.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ====== CTA / DOWNLOAD ====== -->
     <section class="cta" id="download">
         <div class="container">
@@ -349,6 +465,15 @@
                     </a>
                 </div>
                 <p class="cta-note">💡 Dùng thử miễn phí 14 ngày, không cần thẻ tín dụng</p>
+                
+                <!-- Newsletter -->
+                <div class="newsletter">
+                    <p class="newsletter-label">📧 Nhận tin tức mới nhất</p>
+                    <form class="newsletter-form" id="newsletterForm">
+                        <input type="email" placeholder="Nhập email của bạn" required />
+                        <button type="submit" class="btn btn-primary">Đăng ký</button>
+                    </form>
+                </div>
             </div>
         </div>
     </section>
@@ -384,7 +509,7 @@
                     <h4>Hỗ trợ</h4>
                     <ul>
                         <li><a href="#">Tài liệu</a></li>
-                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#faq">FAQ</a></li>
                         <li><a href="#">Blog</a></li>
                         <li><a href="#">Liên hệ</a></li>
                     </ul>
