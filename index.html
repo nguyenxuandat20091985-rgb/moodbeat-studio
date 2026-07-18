@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MoodBeat Studio - Công cụ xử lý video chuyên nghiệp với AI" />
-    <title>MoodBeat Studio - Video Editor Pro</title>
+    <meta name="description" content="MoodBeat Studio - Công cụ xử lý video chuyên nghiệp với AI, chạy 100% trên trình duyệt" />
+    <title>MoodBeat Studio - Video Editor Pro v4.0</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,25 +14,50 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
     
+    <!-- FFmpeg.wasm v0.12.7 ESM Modules -->
+    <script type="module">
+        import { FFmpeg } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.7/dist/esm/index.js';
+        import { fetchFile, toBlobURL } from 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js';
+        window.FFmpeg = FFmpeg;
+        window.fetchFile = fetchFile;
+        window.toBlobURL = toBlobURL;
+        console.log('✅ FFmpeg modules loaded successfully');
+    </script>
+    
     <style>
-        /* ====== FULL CSS ====== */
+        /* ====== CORE VARIABLES & RESET ====== */
         *{margin:0;padding:0;box-sizing:border-box}
-        :root{--primary:#8b5cf6;--primary-dark:#7c3aed;--primary-light:#a78bfa;--secondary:#ec4899;--accent:#06b6d4;--success:#10b981;--warning:#f59e0b;--error:#ef4444;--bg-primary:#050510;--bg-secondary:#0a0a1a;--bg-card:#0f0f25;--border-color:rgba(255,255,255,0.08);--border-light:rgba(255,255,255,0.12);--text-primary:#ffffff;--text-secondary:#94a3b8;--text-muted:#64748b;--gradient-primary:linear-gradient(135deg,var(--primary),var(--secondary));--font-family:'Inter',sans-serif;--section-padding:80px 0;--container-width:1200px;--radius-md:12px;--radius-lg:20px;--radius-xl:28px;--shadow-glow:0 0 60px rgba(139,92,246,0.15)}
+        :root{
+            --primary:#8b5cf6;--primary-dark:#7c3aed;--primary-light:#a78bfa;
+            --secondary:#ec4899;--accent:#06b6d4;--success:#10b981;--warning:#f59e0b;--error:#ef4444;
+            --bg-primary:#050510;--bg-secondary:#0a0a1a;--bg-card:#0f0f25;
+            --border-color:rgba(255,255,255,0.08);--border-light:rgba(255,255,255,0.12);
+            --text-primary:#ffffff;--text-secondary:#94a3b8;--text-muted:#64748b;
+            --gradient-primary:linear-gradient(135deg,var(--primary),var(--secondary));
+            --font-family:'Inter',sans-serif;
+            --section-padding:80px 0;--container-width:1200px;
+            --radius-md:12px;--radius-lg:20px;--radius-xl:28px;
+            --shadow-glow:0 0 60px rgba(139,92,246,0.15)
+        }
         html{scroll-behavior:smooth}
         body{font-family:var(--font-family);background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden}
         .container{max-width:var(--container-width);margin:0 auto;padding:0 24px}
-        .gradient-text{background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+        .gradient-text{background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
         .section-label{display:inline-block;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:2px;color:var(--primary-light);margin-bottom:12px;padding-left:20px;position:relative}
         .section-label::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:12px;height:2px;background:var(--gradient-primary);border-radius:2px}
         .section-title{font-size:clamp(32px,4vw,48px);font-weight:800;line-height:1.1;margin-bottom:16px}
-        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border:none;border-radius:var(--radius-md);font-size:15px;font-weight:600;font-family:var(--font-family);cursor:pointer;text-decoration:none;transition:all 0.3s}
+        
+        /* ====== BUTTONS ====== */        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 32px;border:none;border-radius:var(--radius-md);font-size:15px;font-weight:600;font-family:var(--font-family);cursor:pointer;text-decoration:none;transition:all 0.3s}
         .btn-primary{background:var(--gradient-primary);color:#fff;box-shadow:0 4px 20px rgba(139,92,246,0.35)}
         .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 40px rgba(139,92,246,0.45)}
+        .btn-primary:disabled{opacity:0.5;cursor:not-allowed;transform:none}
         .btn-outline{background:transparent;color:var(--text-primary);border:2px solid var(--border-light)}
         .btn-outline:hover{background:rgba(255,255,255,0.05);border-color:var(--primary);transform:translateY(-2px)}
         .btn-sm{padding:10px 20px;font-size:13px}
         .btn-lg{padding:18px 40px;font-size:17px}
         .btn-full{width:100%;justify-content:center}
+
+        /* ====== NAVBAR ====== */
         .navbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding:16px 0;background:rgba(5,5,16,0.8);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-color);transition:all 0.3s}
         .navbar.scrolled{background:rgba(5,5,16,0.95);box-shadow:0 4px 30px rgba(0,0,0,0.5)}
         .nav-wrapper{display:flex;align-items:center;justify-content:space-between}
@@ -47,6 +72,8 @@
         .nav-links a:hover::after{width:100%}
         .nav-actions{display:flex;align-items:center;gap:16px}
         .menu-toggle{display:none;background:none;border:none;color:var(--text-primary);font-size:24px;cursor:pointer;padding:4px}
+
+        /* ====== HERO ====== */
         .hero{padding:140px 0 100px;position:relative;overflow:hidden}
         .hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center}
         .hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.2);border-radius:30px;font-size:12px;font-weight:600;color:var(--primary-light);margin-bottom:20px}
@@ -69,13 +96,60 @@
         .floating-badge{position:absolute;padding:8px 16px;background:rgba(15,15,37,0.85);backdrop-filter:blur(10px);border:1px solid var(--border-color);border-radius:30px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;z-index:2;animation:float 4s ease-in-out infinite}
         .badge-1{top:16px;right:16px;animation-delay:0s}
         .badge-2{bottom:60px;left:16px;animation-delay:1s}
-        .badge-3{bottom:16px;right:16px;animation-delay:2s}
-        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        .badge-3{bottom:16px;right:16px;animation-delay:2s}        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
         .hero-shapes{position:absolute;inset:0;pointer-events:none;overflow:hidden}
         .shape{position:absolute;border-radius:50%;opacity:0.05}
         .shape-1{width:400px;height:400px;background:var(--primary);top:-100px;right:-100px}
         .shape-2{width:300px;height:300px;background:var(--secondary);bottom:-50px;left:-50px}
         .shape-3{width:200px;height:200px;background:var(--accent);top:50%;left:50%;transform:translate(-50%,-50%)}
+
+        /* ====== APP WORKSPACE (NEW - CORE FUNCTIONALITY) ====== */
+        .app-workspace{padding:var(--section-padding);background:var(--bg-secondary);border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color)}
+        .workspace-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start}
+        @media(max-width:1024px){.workspace-grid{grid-template-columns:1fr}}
+        
+        .drop-zone{border:2px dashed var(--border-color);border-radius:var(--radius-lg);padding:40px 20px;text-align:center;background:rgba(255,255,255,0.02);transition:all 0.3s;cursor:pointer;position:relative;overflow:hidden}
+        .drop-zone.dragover{border-color:var(--primary);background:rgba(139,92,246,0.05)}
+        .drop-zone.processing{border-color:var(--warning);pointer-events:none;opacity:0.7}
+        .drop-zone-icon{font-size:48px;margin-bottom:12px;color:var(--primary-light)}
+        .drop-zone h3{font-size:18px;font-weight:700;margin-bottom:8px}
+        .drop-zone p{font-size:14px;color:var(--text-secondary)}
+        .drop-zone input{display:none}
+        
+        .file-info{margin-top:16px;padding:16px;background:rgba(255,255,255,0.03);border-radius:var(--radius-md);border:1px solid var(--border-color);display:none}
+        .file-info.active{display:block;animation:fadeIn 0.3s}
+        .file-info-row{display:flex;justify-content:space-between;padding:8px 0;font-size:13px;border-bottom:1px solid var(--border-color)}
+        .file-info-row:last-child{border-bottom:none}
+        .file-info-label{color:var(--text-muted)}
+        .file-info-value{font-weight:600;color:var(--accent)}
+
+        .progress-container{margin:24px 0;display:none}
+        .progress-container.active{display:block;animation:fadeIn 0.3s}
+        .progress-bar{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;overflow:hidden}
+        .progress-fill{height:100%;width:0%;background:var(--gradient-primary);background-size:200% 100%;animation:shimmer 1.5s linear infinite;transition:width 0.3s ease}
+        @keyframes shimmer{0%{background-position:0% 0%}100%{background-position:200% 0%}}
+        .progress-text{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--text-muted)}
+        .progress-text .percentage{color:var(--primary);font-weight:700}
+
+        .preview-section{margin-top:24px;display:none}
+        .preview-section.active{display:block;animation:fadeIn 0.4s}
+        .preview-label{font-size:13px;color:var(--text-muted);margin-bottom:12px;text-transform:uppercase;letter-spacing:1px;font-weight:600}
+        .preview-container{position:relative;border-radius:var(--radius-lg);overflow:hidden;background:#000;border:1px solid var(--border-color);aspect-ratio:9/16;max-height:500px}
+        .preview-container.wide{aspect-ratio:16/9}
+        #videoPreview{width:100%;height:100%;object-fit:contain}
+        .preview-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);cursor:pointer}
+        .play-button-app{width:70px;height:70px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;box-shadow:0 10px 30px rgba(139,92,246,0.5);transition:transform 0.2s}
+        .play-button-app:hover{transform:scale(1.1)}
+
+        .debug-panel{margin-top:24px;padding:16px;background:rgba(0,0,0,0.4);border-radius:var(--radius-md);border:1px solid var(--border-color);font-family:'Courier New',monospace;font-size:11px;color:var(--text-muted);max-height:200px;overflow-y:auto}
+        .debug-panel .log-entry{padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05)}
+        .debug-panel .log-entry.error{color:var(--error)}
+        .debug-panel .log-entry.success{color:var(--success)}
+        .status-badge{position:fixed;top:80px;right:20px;padding:8px 14px;background:rgba(16,185,129,0.2);border:1px solid var(--success);border-radius:20px;font-size:11px;font-weight:700;color:var(--success);display:none;z-index:50}
+        .status-badge.active{display:block;animation:pulse 2s infinite}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+
+        /* ====== LANDING PAGE SECTIONS (Keep original) ====== */
         .platforms{padding:var(--section-padding);text-align:center}
         .platform-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:40px}
         .platform-card{padding:32px 20px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);transition:all 0.3s;cursor:pointer}
@@ -84,7 +158,6 @@
         .platform-icon{font-size:36px;margin-bottom:12px}
         .platform-card h3{font-size:16px;font-weight:700;margin-bottom:4px}
         .platform-card p{font-size:13px;color:var(--text-secondary)}
-        .platform-tag{display:inline-block;margin-top:10px;padding:2px 12px;background:rgba(139,92,246,0.12);border-radius:20px;font-size:11px;font-weight:600;color:var(--primary-light)}
         .features{padding:var(--section-padding);background:var(--bg-secondary);text-align:center}
         .features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
         .feature-card{padding:32px 24px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);text-align:left;transition:all 0.3s}
@@ -101,21 +174,11 @@
         .step h3{font-size:18px;font-weight:700;margin-bottom:8px}
         .step p{color:var(--text-secondary);font-size:14px;line-height:1.7}
         .step-arrow{padding:0 16px;color:var(--text-muted);font-size:20px}
-        .demo{padding:var(--section-padding);background:var(--bg-secondary)}
-        .demo-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;padding:40px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-xl)}
-        .demo-content p{color:var(--text-secondary);font-size:16px;margin-bottom:24px}
-        .demo-actions{display:flex;gap:16px;flex-wrap:wrap}
-        .demo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-        .demo-stat{text-align:center;padding:20px;background:rgba(255,255,255,0.03);border-radius:var(--radius-md);border:1px solid var(--border-color);transition:all 0.3s}
-        .demo-stat:hover{transform:translateY(-4px);border-color:var(--primary)}
-        .demo-number{display:block;font-size:32px;font-weight:800;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-        .demo-label{font-size:13px;color:var(--text-muted);margin-top:4px}
         .pricing{padding:var(--section-padding);text-align:center}
         .pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:40px}
         .pricing-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:32px 24px;text-align:left;transition:all 0.3s;position:relative}
         .pricing-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:var(--shadow-glow)}
         .pricing-card.popular{border-color:var(--primary);box-shadow:var(--shadow-glow);transform:scale(1.02)}
-        .pricing-card.popular:hover{transform:scale(1.02) translateY(-4px)}
         .pricing-popular{position:absolute;top:-12px;left:50%;transform:translateX(-50%);padding:4px 20px;background:var(--gradient-primary);border-radius:30px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
         .pricing-header h3{font-size:20px;font-weight:700;margin-bottom:4px}
         .pricing-price{font-size:36px;font-weight:800;margin:12px 0 4px}
@@ -131,8 +194,7 @@
         .testimonial-card{padding:32px 24px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-lg);text-align:left;transition:all 0.3s}
         .testimonial-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:var(--shadow-glow)}
         .testimonial-stars{font-size:18px;margin-bottom:12px;letter-spacing:2px}
-        .testimonial-card p{color:var(--text-secondary);font-size:15px;line-height:1.8;margin-bottom:16px;font-style:italic}
-        .testimonial-author{display:flex;align-items:center;gap:12px}
+        .testimonial-card p{color:var(--text-secondary);font-size:15px;line-height:1.8;margin-bottom:16px;font-style:italic}        .testimonial-author{display:flex;align-items:center;gap:12px}
         .author-avatar{width:44px;height:44px;border-radius:50%;background:var(--gradient-primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;color:#fff}
         .testimonial-author strong{display:block;font-size:14px}
         .testimonial-author span{font-size:13px;color:var(--text-muted)}
@@ -173,101 +235,104 @@
         .footer-links ul a{color:var(--text-secondary);text-decoration:none;font-size:14px;transition:color 0.3s}
         .footer-links ul a:hover{color:var(--text-primary)}
         .footer-bottom{padding-top:24px;border-top:1px solid var(--border-color);display:flex;justify-content:space-between;font-size:13px;color:var(--text-muted)}
-        .footer-bottom .fa-heart{color:var(--secondary)}
         .back-to-top{position:fixed;bottom:30px;right:30px;width:48px;height:48px;border-radius:50%;background:var(--gradient-primary);color:#fff;border:none;font-size:18px;cursor:pointer;box-shadow:0 4px 20px rgba(139,92,246,0.35);transition:all 0.3s;opacity:0;visibility:hidden;z-index:999}
         .back-to-top.visible{opacity:1;visibility:visible}
         .back-to-top:hover{transform:translateY(-4px) scale(1.05)}
-        @media(max-width:1024px){.hero-grid{grid-template-columns:1fr;text-align:center}.hero-desc{max-width:100%;margin:0 auto 32px}.hero-buttons{justify-content:center}.hero-stats{justify-content:center}.hero-video-wrapper{max-width:400px;margin:0 auto}.platform-grid{grid-template-columns:repeat(2,1fr)}.features-grid{grid-template-columns:repeat(2,1fr)}.pricing-grid{grid-template-columns:1fr 1fr}.testimonials-grid{grid-template-columns:1fr 1fr}.footer-grid{grid-template-columns:1fr 1fr}.steps{flex-direction:column;gap:24px}.step{max-width:100%}.step-arrow{transform:rotate(90deg);padding:0}.demo-wrapper{grid-template-columns:1fr;text-align:center}.demo-actions{justify-content:center}.demo-stats{grid-template-columns:repeat(3,1fr)}}
-        @media(max-width:768px){.nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;padding:20px 24px;background:var(--bg-primary);border-bottom:1px solid var(--border-color);gap:16px}.nav-links.open{display:flex}.menu-toggle{display:block}.platform-grid{grid-template-columns:1fr 1fr}.features-grid{grid-template-columns:1fr}.pricing-grid{grid-template-columns:1fr;max-width:400px;margin-left:auto;margin-right:auto}.pricing-card.popular{transform:none}.testimonials-grid{grid-template-columns:1fr;max-width:400px;margin-left:auto;margin-right:auto}.footer-grid{grid-template-columns:1fr;gap:30px}.footer-bottom{flex-direction:column;text-align:center;gap:8px}.cta-wrapper{padding:40px 20px}.cta-buttons{flex-direction:column;align-items:center}.hero-title{font-size:32px}.floating-badge{display:none}.demo-wrapper{padding:24px}.demo-stats{grid-template-columns:1fr}.newsletter-form{flex-direction:column}}
-        @media(max-width:480px){.platform-grid{grid-template-columns:1fr}.section-title{font-size:28px}.hero{padding:120px 0 60px}}
+
+        /* ====== TOAST NOTIFICATIONS ====== */
+        .toast-container{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10000;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+        .toast{padding:14px 24px;background:rgba(15,15,37,0.95);backdrop-filter:blur(10px);border-radius:12px;border:1px solid var(--border-color);box-shadow:0 10px 30px rgba(0,0,0,0.5);display:flex;align-items:center;gap:12px;font-size:13px;font-weight:600;animation:toastSlide 0.3s ease;pointer-events:all;max-width:90vw}
+        @keyframes toastSlide{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        .toast.hiding{animation:toastHide 0.3s ease forwards}        @keyframes toastHide{to{opacity:0;transform:translateY(-20px)}}
+        .toast.success{border-left:4px solid var(--success)}
+        .toast.error{border-left:4px solid var(--error)}
+        .toast.warning{border-left:4px solid var(--warning)}
+        .toast.info{border-left:4px solid var(--accent)}
+
+        /* ====== RESPONSIVE ====== */
+        @media(max-width:1024px){
+            .hero-grid,.workspace-grid{grid-template-columns:1fr;text-align:center}
+            .hero-desc{max-width:100%;margin:0 auto 32px}
+            .hero-buttons{justify-content:center}
+            .hero-stats{justify-content:center}
+            .hero-video-wrapper{max-width:400px;margin:0 auto}
+            .platform-grid{grid-template-columns:repeat(2,1fr)}
+            .features-grid{grid-template-columns:repeat(2,1fr)}
+            .pricing-grid{grid-template-columns:1fr 1fr}
+            .testimonials-grid{grid-template-columns:1fr 1fr}
+            .footer-grid{grid-template-columns:1fr 1fr}
+            .steps{flex-direction:column;gap:24px}
+            .step{max-width:100%}
+            .step-arrow{transform:rotate(90deg);padding:0}
+        }
+        @media(max-width:768px){
+            .nav-links{display:none;position:absolute;top:100%;left:0;right:0;flex-direction:column;padding:20px 24px;background:var(--bg-primary);border-bottom:1px solid var(--border-color);gap:16px}
+            .nav-links.open{display:flex}
+            .menu-toggle{display:block}
+            .platform-grid,.features-grid,.pricing-grid,.testimonials-grid,.footer-grid{grid-template-columns:1fr}
+            .pricing-card.popular{transform:none}
+            .footer-bottom{flex-direction:column;text-align:center;gap:8px}
+            .cta-wrapper{padding:40px 20px}
+            .cta-buttons{flex-direction:column;align-items:center}
+            .hero-title{font-size:32px}
+            .floating-badge{display:none}
+            .newsletter-form{flex-direction:column}
+        }
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
         @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
         .animate{animation:fadeInUp 0.6s ease forwards}
-        .clients{padding:40px 0;text-align:center;border-top:1px solid var(--border-color);border-bottom:1px solid var(--border-color)}
-        .clients-label{font-size:13px;color:var(--text-muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:24px}
-        .clients-grid{display:flex;justify-content:center;align-items:center;gap:40px;flex-wrap:wrap}
-        .client-logo{font-size:18px;font-weight:600;color:var(--text-muted);opacity:0.5;transition:all 0.3s;padding:8px 16px;border:1px solid transparent;border-radius:8px}
-        .client-logo:hover{opacity:1;color:var(--text-primary);border-color:var(--border-color)}
-        @media(max-width:768px){.clients-grid{gap:16px}.client-logo{font-size:14px;padding:4px 12px}}
     </style>
 </head>
 <body>
-    <!-- ====== NAVBAR ====== -->
+    <!-- Status Badge -->
+    <div class="status-badge" id="statusBadge">⚡ FFmpeg Ready</div>
+
+    <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <div class="container">
             <div class="nav-wrapper">
                 <a href="#" class="logo">
-                    <div class="logo-icon">🎵</div>
-                    <span class="logo-text">MoodBeat <span class="logo-highlight">Studio</span></span>
+                    <div class="logo-icon">🎵</div>                    <span class="logo-text">MoodBeat <span class="logo-highlight">Studio</span></span>
                     <span class="logo-badge">Pro</span>
                 </a>
                 <ul class="nav-links" id="navLinks">
+                    <li><a href="#app-workspace">Trình Editor</a></li>
                     <li><a href="#features">Tính năng</a></li>
                     <li><a href="#how-it-works">Cách dùng</a></li>
                     <li><a href="#pricing">Bảng giá</a></li>
-                    <li><a href="#testimonials">Đánh giá</a></li>
-                    <li><a href="#faq">FAQ</a></li>
                 </ul>
                 <div class="nav-actions">
-                    <a href="#download" class="btn btn-primary btn-sm" onclick="event.preventDefault();alert('🚀 Cảm ơn bạn đã quan tâm! Tính năng này sẽ sớm ra mắt.');">
-                        <i class="fas fa-download"></i> Tải ngay
-                    </a>
-                    <button class="menu-toggle" id="menuToggle">
-                        <i class="fas fa-bars"></i>
-                    </button>
+                    <a href="#app-workspace" class="btn btn-primary btn-sm"><i class="fas fa-rocket"></i> Vào App</a>
+                    <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
                 </div>
             </div>
         </div>
     </nav>
 
-    <!-- ====== HERO ====== -->
+    <!-- Hero -->
     <section class="hero" id="hero">
         <div class="container">
             <div class="hero-grid">
                 <div class="hero-content">
-                    <div class="hero-badge">
-                        <span class="badge-dot"></span>
-                        v4.0 Pro - FFmpeg.wasm
-                    </div>
-                    <h1 class="hero-title">
-                        Biến ý tưởng thành
-                        <span class="gradient-text">video đỉnh cao</span>
-                    </h1>
-                    <p class="hero-desc">
-                        MoodBeat Studio là công cụ xử lý video chuyên nghiệp với AI,
-                        hỗ trợ tối ưu hóa cho TikTok, Reels, YouTube và Facebook.
-                        Tạo video chất lượng cao chỉ với vài cú click.
-                    </p>
+                    <div class="hero-badge"><span class="badge-dot"></span> v4.0 Pro - FFmpeg.wasm</div>
+                    <h1 class="hero-title">Biến ý tưởng thành <span class="gradient-text">video đỉnh cao</span></h1>
+                    <p class="hero-desc">MoodBeat Studio là công cụ xử lý video chuyên nghiệp với AI, hỗ trợ tối ưu hóa cho TikTok, Reels, YouTube. Tạo video chất lượng cao 100% trên trình duyệt, không cần server.</p>
                     <div class="hero-buttons">
-                        <a href="#demo" class="btn btn-primary btn-lg">
-                            <i class="fas fa-play"></i> Dùng thử ngay
-                        </a>
-                        <a href="#features" class="btn btn-outline btn-lg">
-                            <i class="fas fa-info-circle"></i> Tìm hiểu thêm
-                        </a>
+                        <a href="#app-workspace" class="btn btn-primary btn-lg"><i class="fas fa-play"></i> Dùng thử ngay</a>
+                        <a href="#features" class="btn btn-outline btn-lg"><i class="fas fa-info-circle"></i> Tìm hiểu thêm</a>
                     </div>
                     <div class="hero-stats">
-                        <div class="stat-item">
-                            <span class="stat-number">50K+</span>
-                            <span class="stat-label">Người dùng</span>
-                        </div>
+                        <div class="stat-item"><span class="stat-number">50K+</span><span class="stat-label">Người dùng</span></div>
                         <div class="stat-divider"></div>
-                        <div class="stat-item">
-                            <span class="stat-number">1M+</span>
-                            <span class="stat-label">Video đã tạo</span>
-                        </div>
+                        <div class="stat-item"><span class="stat-number">1M+</span><span class="stat-label">Video đã tạo</span></div>
                         <div class="stat-divider"></div>
-                        <div class="stat-item">
-                            <span class="stat-number">4.9</span>
-                            <span class="stat-label">⭐ Đánh giá</span>
-                        </div>
+                        <div class="stat-item"><span class="stat-number">4.9</span><span class="stat-label">⭐ Đánh giá</span></div>
                     </div>
                 </div>
                 <div class="hero-visual">
                     <div class="hero-video-wrapper">
                         <div class="hero-video-placeholder">
-                            <div class="play-circle" onclick="alert('🎬 Video demo sẽ được phát!')">
-                                <i class="fas fa-play"></i>
-                            </div>
+                            <div class="play-circle"><i class="fas fa-play"></i></div>
                             <img src="https://placehold.co/600x800/8b5cf6/ffffff?text=MoodBeat+Studio" alt="MoodBeat Studio" class="hero-image" />
                             <div class="floating-badge badge-1"><i class="fas fa-film"></i> 4K HDR</div>
                             <div class="floating-badge badge-2"><i class="fas fa-bolt"></i> AI Enhanced</div>
@@ -276,64 +341,87 @@
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="hero-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
-        </div>
+        </div>        <div class="hero-shapes"><div class="shape shape-1"></div><div class="shape shape-2"></div><div class="shape shape-3"></div></div>
     </section>
 
-    <!-- ====== CLIENTS ====== -->
-    <section class="clients">
+    <!-- ====== APP WORKSPACE (CORE FUNCTIONALITY) ====== -->
+    <section class="app-workspace" id="app-workspace">
         <div class="container">
-            <p class="clients-label">Được tin dùng bởi</p>
-            <div class="clients-grid">
-                <span class="client-logo">🎵 Spotify</span>
-                <span class="client-logo">📺 Netflix</span>
-                <span class="client-logo">🎬 Adobe</span>
-                <span class="client-logo">📱 TikTok</span>
-                <span class="client-logo">▶️ YouTube</span>
-                <span class="client-logo">🎮 Unity</span>
+            <div style="text-align:center;margin-bottom:40px;">
+                <span class="section-label">Không gian làm việc</span>
+                <h2 class="section-title">Bắt đầu <span class="gradient-text">xử lý video</span></h2>
+            </div>
+            
+            <div class="workspace-grid">
+                <!-- Left: Controls -->
+                <div>
+                    <!-- Platform Selector -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+                        <div class="platform-card active" data-platform="tiktok" data-width="1080" data-height="1920" data-bitrate="3000k" style="padding:16px;">
+                            <div style="font-size:24px;margin-bottom:8px;">🎵</div>
+                            <div style="font-weight:700;font-size:14px;">TikTok / Reels</div>
+                            <div style="font-size:11px;color:var(--text-muted);">9:16 · 1080×1920</div>
+                        </div>
+                        <div class="platform-card" data-platform="youtube" data-width="1920" data-height="1080" data-bitrate="5000k" style="padding:16px;">
+                            <div style="font-size:24px;margin-bottom:8px;">▶️</div>
+                            <div style="font-weight:700;font-size:14px;">YouTube / FB</div>
+                            <div style="font-size:11px;color:var(--text-muted);">16:9 · 1920×1080</div>
+                        </div>
+                    </div>
+
+                    <!-- Drop Zone -->
+                    <div class="drop-zone" id="dropZone">
+                        <input type="file" id="fileInput" accept="video/*,audio/*,image/*">
+                        <div class="drop-zone-icon">📁</div>
+                        <h3>Kéo thả file vào đây</h3>
+                        <p>hoặc click để chọn file</p>
+                        <p style="margin-top:8px;font-size:11px;opacity:0.7;">MP4, MOV, WebM, MP3, WAV, JPG, PNG (Max 500MB)</p>
+                    </div>
+
+                    <!-- File Info -->
+                    <div class="file-info" id="fileInfo">
+                        <div class="file-info-row"><span class="file-info-label">Tên file:</span><span class="file-info-value" id="fileName">-</span></div>
+                        <div class="file-info-row"><span class="file-info-label">Kích thước:</span><span class="file-info-value" id="fileSize">-</span></div>
+                        <div class="file-info-row"><span class="file-info-label">Thời lượng:</span><span class="file-info-value" id="fileDuration">-</span></div>
+                    </div>
+
+                    <!-- Progress -->
+                    <div class="progress-container" id="progressContainer">
+                        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                        <div class="progress-text">
+                            <span id="progressStatus">Đang xử lý...</span>
+                            <span class="percentage" id="progressPercent">0%</span>                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px;">
+                        <button class="btn btn-outline" id="resetBtn" style="width:100%"><i class="fas fa-rotate-left"></i> Reset</button>
+                        <button class="btn btn-primary" id="processBtn" disabled style="width:100%"><i class="fas fa-wand-magic-sparkles"></i> Xử lý Video</button>
+                    </div>
+                </div>
+
+                <!-- Right: Preview & Debug -->
+                <div>
+                    <div class="preview-section" id="previewSection">
+                        <div class="preview-label">Xem trước kết quả</div>
+                        <div class="preview-container" id="previewContainer">
+                            <video id="videoPreview" controls playsinline></video>
+                            <div class="preview-overlay" id="previewOverlay">
+                                <div class="play-button-app">▶</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="debug-panel" id="debugPanel">
+                        <div style="font-weight:700;margin-bottom:8px;color:var(--text-primary);">🛠️ Debug Log (Real-time):</div>
+                        <div id="debugLogs"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
 
-    <!-- ====== PLATFORMS ====== -->
-    <section class="platforms" id="platforms">
-        <div class="container">
-            <div class="section-label">Hỗ trợ đa nền tảng</div>
-            <h2 class="section-title">Tối ưu cho mọi <span class="gradient-text">nền tảng</span></h2>
-            <div class="platform-grid">
-                <div class="platform-card" onclick="this.classList.toggle('active')">
-                    <div class="platform-icon">🎵</div>
-                    <h3>TikTok / Reels</h3>
-                    <p>9:16 · 1080×1920 · 3000k</p>
-                    <span class="platform-tag">Phổ biến</span>
-                </div>
-                <div class="platform-card active" onclick="this.classList.toggle('active')">
-                    <div class="platform-icon">▶️</div>
-                    <h3>YouTube / FB</h3>
-                    <p>16:9 · 1920×1080 · 5000k</p>
-                    <span class="platform-tag">Chất lượng cao</span>
-                </div>
-                <div class="platform-card" onclick="this.classList.toggle('active')">
-                    <div class="platform-icon">📱</div>
-                    <h3>Instagram Stories</h3>
-                    <p>9:16 · 1080×1920 · 2500k</p>
-                    <span class="platform-tag">Mobile</span>
-                </div>
-                <div class="platform-card" onclick="this.classList.toggle('active')">
-                    <div class="platform-icon">🎬</div>
-                    <h3>Twitter / LinkedIn</h3>
-                    <p>1:1 · 1080×1080 · 2000k</p>
-                    <span class="platform-tag">Social</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ====== FEATURES ====== -->
+    <!-- Features -->
     <section class="features" id="features">
         <div class="container">
             <div class="section-label">Tính năng nổi bật</div>
@@ -350,30 +438,14 @@
                     <p>Đồng bộ video với nhạc theo nhịp, tạo hiệu ứng chuyển cảnh ấn tượng.</p>
                 </div>
                 <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(6,182,212,0.15);color:#06b6d4"><i class="fas fa-expand"></i></div>
-                    <h3>Smart Cropping</h3>
-                    <p>Cắt và chỉnh tỷ lệ video thông minh, giữ nguyên nội dung quan trọng.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(16,185,129,0.15);color:#10b981"><i class="fas fa-bolt"></i></div>
-                    <h3>Lightning Fast</h3>
-                    <p>Xử lý nhanh chóng với FFmpeg.wasm, không cần tải lên server.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(245,158,11,0.15);color:#f59e0b"><i class="fas fa-layer-group"></i></div>
-                    <h3>Multi-format</h3>
-                    <p>Hỗ trợ MP4, MOV, WebM, MP3, WAV, JPG, PNG và nhiều định dạng khác.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6"><i class="fas fa-shield-alt"></i></div>
-                    <h3>Private & Secure</h3>
-                    <p>Xử lý hoàn toàn trên trình duyệt, dữ liệu không bao giờ rời khỏi máy bạn.</p>
+                    <div class="feature-icon" style="background:rgba(6,182,212,0.15);color:#06b6d4"><i class="fas fa-bolt"></i></div>
+                    <h3>Lightning Fast</h3>                    <p>Xử lý nhanh chóng với FFmpeg.wasm, không cần tải lên server, bảo mật tuyệt đối.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ====== HOW IT WORKS ====== -->
+    <!-- How it works -->
     <section class="how-it-works" id="how-it-works">
         <div class="container">
             <div class="section-label">Cách sử dụng</div>
@@ -390,7 +462,7 @@
                     <div class="step-number">2</div>
                     <div class="step-icon">⚙️</div>
                     <h3>Chọn cấu hình</h3>
-                    <p>Lựa chọn nền tảng, tỷ lệ và chất lượng đầu ra mong muốn.</p>
+                    <p>Lựa chọn nền tảng (TikTok, YouTube), tỷ lệ và chất lượng đầu ra.</p>
                 </div>
                 <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
                 <div class="step">
@@ -403,135 +475,47 @@
         </div>
     </section>
 
-    <!-- ====== DEMO ====== -->
-    <section class="demo" id="demo">
-        <div class="container">
-            <div class="demo-wrapper">
-                <div class="demo-content">
-                    <span class="section-label">Dùng thử ngay</span>
-                    <h2 class="section-title">Trải nghiệm <span class="gradient-text">miễn phí</span></h2>
-                    <p>Không cần đăng ký, không cần thẻ tín dụng. Bắt đầu tạo video ngay hôm nay.</p>
-                    <div class="demo-actions">
-                        <a href="#" class="btn btn-primary btn-lg" onclick="event.preventDefault();alert('🚀 Tính năng này đang được phát triển!');">
-                            <i class="fas fa-play"></i> Dùng thử ngay
-                        </a>
-                        <a href="#" class="btn btn-outline btn-lg" onclick="event.preventDefault();alert('🎬 Video demo sẽ sớm được cập nhật!');">
-                            <i class="fas fa-video"></i> Xem demo
-                        </a>
-                    </div>
-                </div>
-                <div class="demo-stats">
-                    <div class="demo-stat">
-                        <span class="demo-number">0</span>
-                        <span class="demo-label">Không cần đăng ký</span>
-                    </div>
-                    <div class="demo-stat">
-                        <span class="demo-number">100%</span>
-                        <span class="demo-label">Trên trình duyệt</span>
-                    </div>
-                    <div class="demo-stat">
-                        <span class="demo-number">14</span>
-                        <span class="demo-label">Ngày dùng thử</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ====== PRICING ====== -->
+    <!-- Pricing -->
     <section class="pricing" id="pricing">
         <div class="container">
             <div class="section-label">Bảng giá</div>
             <h2 class="section-title">Chọn gói phù hợp với <span class="gradient-text">bạn</span></h2>
             <div class="pricing-grid">
                 <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Miễn phí</h3>
-                        <div class="pricing-price">$0</div>
-                        <p>Dùng thử cơ bản</p>
-                    </div>
+                    <div class="pricing-header"><h3>Miễn phí</h3><div class="pricing-price">$0</div><p>Dùng thử cơ bản</p></div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> Xử lý video cơ bản</li>
                         <li><i class="fas fa-check"></i> Hỗ trợ 2 nền tảng</li>
                         <li><i class="fas fa-check"></i> File size ≤ 100MB</li>
                         <li><i class="fas fa-times"></i> AI Enhancement</li>
-                        <li><i class="fas fa-times"></i> Beat Sync</li>
-                        <li><i class="fas fa-times"></i> Export 4K</li>
-                    </ul>
-                    <a href="#" class="btn btn-outline btn-full" onclick="event.preventDefault();alert('📝 Đăng ký gói Free thành công!');">Dùng thử</a>
+                    </ul>                    <a href="#app-workspace" class="btn btn-outline btn-full">Dùng thử</a>
                 </div>
                 <div class="pricing-card popular">
                     <div class="pricing-popular">Phổ biến nhất</div>
-                    <div class="pricing-header">
-                        <h3>Pro</h3>
-                        <div class="pricing-price">$12<span>/tháng</span></div>
-                        <p>Dành cho nhà sáng tạo</p>
-                    </div>
+                    <div class="pricing-header"><h3>Pro</h3><div class="pricing-price">$12<span>/tháng</span></div><p>Dành cho nhà sáng tạo</p></div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> Mọi tính năng nâng cao</li>
                         <li><i class="fas fa-check"></i> Hỗ trợ 4+ nền tảng</li>
                         <li><i class="fas fa-check"></i> File size ≤ 2GB</li>
-                        <li><i class="fas fa-check"></i> AI Enhancement</li>
-                        <li><i class="fas fa-check"></i> Beat Sync</li>
-                        <li><i class="fas fa-check"></i> Export 4K</li>
+                        <li><i class="fas fa-check"></i> AI Enhancement & Beat Sync</li>
                     </ul>
-                    <a href="#" class="btn btn-primary btn-full" onclick="event.preventDefault();alert('💳 Chuyển đến trang thanh toán Pro!');">Đăng ký ngay</a>
+                    <a href="#" class="btn btn-primary btn-full" onclick="event.preventDefault();showToast('info','💳 Tính năng thanh toán sẽ sớm ra mắt!')">Đăng ký ngay</a>
                 </div>
                 <div class="pricing-card">
-                    <div class="pricing-header">
-                        <h3>Business</h3>
-                        <div class="pricing-price">$29<span>/tháng</span></div>
-                        <p>Dành cho doanh nghiệp</p>
-                    </div>
+                    <div class="pricing-header"><h3>Business</h3><div class="pricing-price">$29<span>/tháng</span></div><p>Dành cho doanh nghiệp</p></div>
                     <ul class="pricing-features">
                         <li><i class="fas fa-check"></i> Mọi tính năng Pro</li>
-                        <li><i class="fas fa-check"></i> Hỗ trợ 6+ nền tảng</li>
                         <li><i class="fas fa-check"></i> File size ≤ 10GB</li>
                         <li><i class="fas fa-check"></i> Team collaboration</li>
-                        <li><i class="fas fa-check"></i> API access</li>
                         <li><i class="fas fa-check"></i> Priority support</li>
                     </ul>
-                    <a href="#" class="btn btn-outline btn-full" onclick="event.preventDefault();alert('📞 Liên hệ với chúng tôi để được tư vấn!');">Liên hệ</a>
+                    <a href="#" class="btn btn-outline btn-full" onclick="event.preventDefault();showToast('info','📞 Vui lòng liên hệ sales@moodbeat.com')">Liên hệ</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ====== TESTIMONIALS ====== -->
-    <section class="testimonials" id="testimonials">
-        <div class="container">
-            <div class="section-label">Đánh giá</div>
-            <h2 class="section-title">Người dùng nói gì về <span class="gradient-text">MoodBeat</span></h2>
-            <div class="testimonials-grid">
-                <div class="testimonial-card">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p>"MoodBeat Studio giúp tôi tạo video TikTok chuyên nghiệp chỉ trong vài phút. Công cụ AI thực sự ấn tượng!"</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">NT</div>
-                        <div><strong>Nguyễn Thành</strong><span>Content Creator</span></div>
-                    </div>
-                </div>
-                <div class="testimonial-card">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p>"Tôi đã thử nhiều tool nhưng MoodBeat là tốt nhất. Xử lý nhanh, chất lượng cao, giao diện đẹp."</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">TM</div>
-                        <div><strong>Trang Mai</strong><span>Social Media Manager</span></div>
-                    </div>
-                </div>
-                <div class="testimonial-card">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p>"Tính năng Beat Sync thật tuyệt vời! Video của tôi trở nên sống động và thu hút hơn rất nhiều."</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">PL</div>
-                        <div><strong>Phúc Lê</strong><span>Musician</span></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- ====== FAQ ====== -->
+    <!-- FAQ -->
     <section class="faq" id="faq">
         <div class="container">
             <div class="section-label">Câu hỏi thường gặp</div>
@@ -539,64 +523,35 @@
             <div class="faq-grid">
                 <div class="faq-item active">
                     <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
-                        <h3>MoodBeat Studio có miễn phí không?</h3>
-                        <span class="faq-toggle"><i class="fas fa-plus"></i></span>
-                    </div>
-                    <div class="faq-answer"><p>Có! MoodBeat Studio có gói miễn phí với các tính năng cơ bản. Bạn có thể nâng cấp lên Pro để sử dụng tất cả tính năng.</p></div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
-                        <h3>Tôi có cần cài đặt phần mềm không?</h3>
-                        <span class="faq-toggle"><i class="fas fa-plus"></i></span>
-                    </div>
-                    <div class="faq-answer"><p>Không! MoodBeat Studio hoạt động hoàn toàn trên trình duyệt. Bạn chỉ cần mở trang web và bắt đầu sử dụng.</p></div>
-                </div>
-                <div class="faq-item">
-                    <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
                         <h3>Dữ liệu của tôi có an toàn không?</h3>
                         <span class="faq-toggle"><i class="fas fa-plus"></i></span>
                     </div>
-                    <div class="faq-answer"><p>Rất an toàn! Tất cả xử lý đều diễn ra trên trình duyệt của bạn. Dữ liệu không bao giờ được gửi lên server.</p></div>
+                    <div class="faq-answer"><p>Rất an toàn! Tất cả xử lý đều diễn ra cục bộ trên trình duyệt của bạn nhờ FFmpeg.wasm. Dữ liệu video không bao giờ được gửi lên server.</p></div>
                 </div>
                 <div class="faq-item">
                     <div class="faq-question" onclick="this.parentElement.classList.toggle('active')">
                         <h3>Những định dạng nào được hỗ trợ?</h3>
                         <span class="faq-toggle"><i class="fas fa-plus"></i></span>
                     </div>
-                    <div class="faq-answer"><p>Hỗ trợ MP4, MOV, WebM, MP3, WAV, JPG, PNG và nhiều định dạng khác.</p></div>
+                    <div class="faq-answer"><p>Hỗ trợ đa dạng định dạng: MP4, MOV, WebM, MP3, WAV, JPG, PNG và nhiều định dạng khác.</p></div>
                 </div>
             </div>
         </div>
     </section>
-
-    <!-- ====== CTA ====== -->
-    <section class="cta" id="download">
+    <!-- CTA -->
+    <section class="cta">
         <div class="container">
             <div class="cta-wrapper">
                 <h2>Sẵn sàng tạo video <span class="gradient-text">đỉnh cao</span>?</h2>
                 <p>Tải ngay MoodBeat Studio và bắt đầu sáng tạo không giới hạn.</p>
                 <div class="cta-buttons">
-                    <a href="#" class="btn btn-primary btn-lg" onclick="event.preventDefault();alert('🚀 Cảm ơn bạn! File tải về sẽ sớm có mặt.');">
-                        <i class="fas fa-download"></i> Tải về miễn phí
-                    </a>
-                    <a href="#" class="btn btn-outline btn-lg" onclick="event.preventDefault();window.open('https://github.com','_blank');">
-                        <i class="fab fa-github"></i> GitHub
-                    </a>
-                </div>
-                <p class="cta-note">💡 Dùng thử miễn phí 14 ngày, không cần thẻ tín dụng</p>
-                
-                <div class="newsletter">
-                    <p class="newsletter-label">📧 Nhận tin tức mới nhất</p>
-                    <form class="newsletter-form" id="newsletterForm" onsubmit="event.preventDefault();alert('✅ Cảm ơn bạn đã đăng ký!');this.querySelector('input').value='';">
-                        <input type="email" placeholder="Nhập email của bạn" required />
-                        <button type="submit" class="btn btn-primary">Đăng ký</button>
-                    </form>
+                    <a href="#app-workspace" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Bắt đầu ngay</a>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- ====== FOOTER ====== -->
+    <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <div class="footer-grid">
@@ -605,40 +560,25 @@
                         <div class="logo-icon">🎵</div>
                         <span class="logo-text">MoodBeat <span class="logo-highlight">Studio</span></span>
                     </a>
-                    <p>Công cụ xử lý video chuyên nghiệp với AI, hỗ trợ đa nền tảng.</p>
+                    <p>Công cụ xử lý video chuyên nghiệp với AI, hỗ trợ đa nền tảng, chạy 100% trên trình duyệt.</p>
                     <div class="footer-social">
                         <a href="#"><i class="fab fa-facebook"></i></a>
                         <a href="#"><i class="fab fa-twitter"></i></a>
                         <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
                         <a href="#"><i class="fab fa-github"></i></a>
                     </div>
                 </div>
                 <div class="footer-links">
                     <h4>Sản phẩm</h4>
-                    <ul>
-                        <li><a href="#features">Tính năng</a></li>
-                        <li><a href="#pricing">Bảng giá</a></li>
-                        <li><a href="#">Changelog</a></li>
-                        <li><a href="#">Roadmap</a></li>
-                    </ul>
+                    <ul><li><a href="#features">Tính năng</a></li><li><a href="#pricing">Bảng giá</a></li></ul>
                 </div>
                 <div class="footer-links">
                     <h4>Hỗ trợ</h4>
-                    <ul>
-                        <li><a href="#">Tài liệu</a></li>
-                        <li><a href="#faq">FAQ</a></li>
-                        <li><a href="#">Blog</a></li>
-                        <li><a href="#">Liên hệ</a></li>
-                    </ul>
+                    <ul><li><a href="#faq">FAQ</a></li><li><a href="#">Liên hệ</a></li></ul>
                 </div>
                 <div class="footer-links">
                     <h4>Pháp lý</h4>
-                    <ul>
-                        <li><a href="#">Điều khoản</a></li>
-                        <li><a href="#">Bảo mật</a></li>
-                        <li><a href="#">Cookie</a></li>
-                    </ul>
+                    <ul><li><a href="#">Điều khoản</a></li><li><a href="#">Bảo mật</a></li></ul>
                 </div>
             </div>
             <div class="footer-bottom">
@@ -647,61 +587,376 @@
             </div>
         </div>
     </footer>
+    <!-- Back to top -->
+    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-arrow-up"></i></button>
+    
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
 
-    <!-- ====== BACK TO TOP ====== -->
-    <button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">
-        <i class="fas fa-arrow-up"></i>
-    </button>
-
+    <!-- ====== JAVASCRIPT LOGIC ====== -->
     <script>
-        // ====== JS ======
-        (function() {
-            // Navbar scroll
-            const navbar = document.getElementById('navbar');
-            window.addEventListener('scroll', () => {
-                navbar.classList.toggle('scrolled', window.pageYOffset > 50);
-            });
-
-            // Mobile menu
-            const menuToggle = document.getElementById('menuToggle');
-            const navLinks = document.getElementById('navLinks');
-            if(menuToggle){
-                menuToggle.addEventListener('click', () => navLinks.classList.toggle('open'));
+        // ==================== STATE ====================
+        const state = {
+            ffmpeg: null,
+            ffmpegLoaded: false,
+            currentPlatform: 'tiktok',
+            currentFile: null,
+            isProcessing: false,
+            config: {
+                tiktok: { width: 1080, height: 1920, ratio: '9:16', bitrate: '3000k', name: 'TikTok/Reels' },
+                youtube: { width: 1920, height: 1080, ratio: '16:9', bitrate: '5000k', name: 'YouTube/Facebook' }
             }
-            document.querySelectorAll('.nav-links a').forEach(link => {
-                link.addEventListener('click', () => navLinks.classList.remove('open'));
-            });
+        };
 
-            // Back to top
-            const backToTop = document.getElementById('backToTop');
-            window.addEventListener('scroll', () => {
-                backToTop.classList.toggle('visible', window.pageYOffset > 300);
-            });
+        // ==================== DOM ====================
+        const $ = id => document.getElementById(id);
+        const els = {
+            dropZone: $('dropZone'), fileInput: $('fileInput'),
+            fileInfo: $('fileInfo'), fileName: $('fileName'),
+            fileSize: $('fileSize'), fileDuration: $('fileDuration'),
+            progressContainer: $('progressContainer'), progressFill: $('progressFill'),
+            progressStatus: $('progressStatus'), progressPercent: $('progressPercent'),
+            previewSection: $('previewSection'), previewContainer: $('previewContainer'),
+            videoPreview: $('videoPreview'), previewOverlay: $('previewOverlay'),
+            processBtn: $('processBtn'), resetBtn: $('resetBtn'),
+            platformCards: document.querySelectorAll('.platform-card'),
+            statusBadge: $('statusBadge'), toastContainer: $('toastContainer'),
+            debugLogs: $('debugLogs')
+        };
 
-            // Smooth scroll
-            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-                anchor.addEventListener('click', function(e) {
-                    const targetId = this.getAttribute('href');
-                    if(targetId === '#') return;
-                    const target = document.querySelector(targetId);
-                    if(target){
-                        e.preventDefault();
-                        window.scrollTo({top: target.offsetTop - 80, behavior: 'smooth'});
+        // ==================== DEBUG LOGGER ====================
+        function debugLog(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${time}] ${msg}`;
+            els.debugLogs.appendChild(entry);
+            els.debugLogs.parentElement.scrollTop = els.debugLogs.parentElement.scrollHeight;
+            console.log(`[MoodBeat] ${msg}`);
+        }
+
+        // ==================== INIT ====================        async function init() {
+            debugLog('Khởi động ứng dụng...');
+            
+            const hasSAB = typeof SharedArrayBuffer !== 'undefined';
+            debugLog(`SharedArrayBuffer: ${hasSAB ? '✅ Có' : '❌ Không (cần COOP/COEP headers)'}`, hasSAB ? 'success' : 'error');
+            
+            if (!window.FFmpeg) {
+                debugLog('FFmpeg modules chưa load', 'error');
+                showToast('error', 'Lỗi load FFmpeg modules. Vui lòng refresh trang.', 5000);
+                return;
+            }
+            
+            try {
+                state.ffmpeg = new window.FFmpeg();
+                debugLog('✅ FFmpeg instance created (v0.12.7)');
+                
+                state.ffmpeg.on('log', ({ message }) => {
+                    const timeMatch = message.match(/time=(\d{2}):(\d{2}):(\d{2})/);
+                    if (timeMatch) {
+                        const secs = parseInt(timeMatch[1]) * 3600 + parseInt(timeMatch[2]) * 60 + parseInt(timeMatch[3]);
+                        updateProgress(Math.min(95, (secs / 30) * 100), `Render: ${formatDuration(secs)}`);
                     }
                 });
+                
+                state.ffmpeg.on('progress', ({ progress }) => {
+                    if (progress >= 0 && progress <= 1) {
+                        updateProgress(progress * 100, `Progress: ${Math.round(progress * 100)}%`);
+                    }
+                });
+                
+                await loadFFmpegCore();
+            } catch (error) {
+                debugLog(`❌ Lỗi init FFmpeg: ${error.message}`, 'error');
+                showToast('error', `Lỗi: ${error.message}`);
+            }
+            
+            setupEventListeners();
+            debugLog('✅ UI event listeners attached');
+        }
+
+        async function loadFFmpegCore() {
+            debugLog('Đang tải FFmpeg core từ CDN...');
+            updateProgress(10, 'Đang tải FFmpeg...');
+            
+            const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.4/dist/umd';
+            try {
+                await state.ffmpeg.load({
+                    coreURL: await window.toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await window.toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                    workerURL: await window.toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript'),                });
+                state.ffmpegLoaded = true;
+                els.statusBadge.classList.add('active');
+                updateProgress(100, 'FFmpeg sẵn sàng');
+                debugLog('✅ FFmpeg core loaded thành công!', 'success');
+                showToast('success', '✅ FFmpeg đã sẵn sàng xử lý video!', 3000);
+            } catch (error) {
+                debugLog(`Lỗi load core: ${error.message}`, 'error');
+                showToast('error', `Không tải được FFmpeg. Kiểm tra kết nối mạng.`);
+            }
+        }
+
+        // ==================== EVENT LISTENERS ====================
+        function setupEventListeners() {
+            els.dropZone.addEventListener('dragover', e => { e.preventDefault(); els.dropZone.classList.add('dragover'); });
+            els.dropZone.addEventListener('dragleave', e => { e.preventDefault(); els.dropZone.classList.remove('dragover'); });
+            els.dropZone.addEventListener('drop', e => {
+                e.preventDefault(); els.dropZone.classList.remove('dragover');
+                if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+            });
+            els.dropZone.addEventListener('click', () => els.fileInput.click());
+            els.fileInput.addEventListener('change', e => { if (e.target.files.length > 0) handleFile(e.target.files[0]); });
+            
+            els.platformCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    els.platformCards.forEach(c => c.classList.remove('active'));
+                    card.classList.add('active');
+                    state.currentPlatform = card.dataset.platform;
+                    const config = state.config[state.currentPlatform];
+                    els.previewContainer.classList.toggle('wide', config.ratio === '16:9');
+                    debugLog(`📐 Chọn platform: ${config.name}`);
+                    showToast('info', `📐 Đã chọn: ${config.name}`, 2000);
+                });
+            });
+            
+            els.processBtn.addEventListener('click', startProcessing);
+            els.resetBtn.addEventListener('click', resetApp);
+            
+            els.previewOverlay.addEventListener('click', () => {
+                if (els.videoPreview.paused) { els.videoPreview.play(); els.previewOverlay.style.display = 'none'; } 
+                else { els.videoPreview.pause(); els.previewOverlay.style.display = 'flex'; }
+            });
+            els.videoPreview.addEventListener('pause', () => { els.previewOverlay.style.display = 'flex'; });
+            
+            window.addEventListener('beforeunload', async () => {
+                if (state.ffmpeg) { try { await state.ffmpeg.terminate(); } catch(e) {} }
             });
 
-            // Scroll animations
+            // Landing page JS
+            const navbar = $('navbar');            window.addEventListener('scroll', () => {
+                navbar.classList.toggle('scrolled', window.pageYOffset > 50);
+                $('backToTop').classList.toggle('visible', window.pageYOffset > 300);
+            });
+            $('menuToggle').addEventListener('click', () => $('navLinks').classList.toggle('open'));
+            document.querySelectorAll('.nav-links a').forEach(link => {
+                link.addEventListener('click', () => $('navLinks').classList.remove('open'));
+            });
+            
             const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if(entry.isIntersecting) entry.target.classList.add('animate');
-                });
+                entries.forEach(entry => { if(entry.isIntersecting) entry.target.classList.add('animate'); });
             }, { threshold: 0.1 });
-            document.querySelectorAll('.feature-card, .platform-card, .pricing-card, .testimonial-card, .step, .demo-stat').forEach(el => observer.observe(el));
+            document.querySelectorAll('.feature-card, .platform-card, .pricing-card, .testimonial-card, .step').forEach(el => observer.observe(el));
+        }
 
-            console.log('%c🎵 MoodBeat Studio v4.0', 'font-size:24px;font-weight:700;color:#8b5cf6;');
-            console.log('%c🚀 Professional Video Editor with AI', 'font-size:14px;color:#94a3b8;');
-        })();
+        // ==================== FILE HANDLING ====================
+        function handleFile(file) {
+            debugLog(`📁 File selected: ${file.name} (${formatFileSize(file.size)})`);
+            const validTypes = ['video/', 'audio/', 'image/'];
+            if (!validTypes.some(t => file.type.startsWith(t))) {
+                showToast('error', '⚠️ File không hợp lệ! Chỉ chấp nhận video, audio, image.');
+                return;
+            }
+            if (file.size > 500 * 1024 * 1024) {
+                showToast('error', '⚠️ File quá lớn (max 500MB)');
+                return;
+            }
+            state.currentFile = file;
+            updateFileInfo(file);
+            els.processBtn.disabled = false;
+            showToast('success', `✅ Đã chọn: ${file.name}`, 2000);
+        }
+
+        function updateFileInfo(file) {
+            els.fileName.textContent = file.name;
+            els.fileSize.textContent = formatFileSize(file.size);
+            els.fileDuration.textContent = 'Đang phân tích...';
+            els.fileInfo.classList.add('active');
+            
+            if (file.type.startsWith('video/') || file.type.startsWith('audio/')) {
+                getMediaDuration(file).then(d => {
+                    els.fileDuration.textContent = formatDuration(d);
+                    debugLog(`⏱️ Duration: ${formatDuration(d)}`);
+                }).catch(() => els.fileDuration.textContent = 'N/A');
+            } else {
+                els.fileDuration.textContent = 'Image';
+            }
+        }
+
+        function getMediaDuration(file) {            return new Promise((resolve, reject) => {
+                const url = URL.createObjectURL(file);
+                const media = document.createElement(file.type.startsWith('video') ? 'video' : 'audio');
+                media.onloadedmetadata = () => { resolve(media.duration); URL.revokeObjectURL(url); };
+                media.onerror = () => { reject(new Error('Cannot load')); URL.revokeObjectURL(url); };
+                media.src = url;
+            });
+        }
+
+        // ==================== PROCESSING ====================
+        async function startProcessing() {
+            if (!state.currentFile || state.isProcessing || !state.ffmpegLoaded) {
+                if (!state.ffmpegLoaded) showToast('warning', '⚠️ FFmpeg chưa sẵn sàng!');
+                return;
+            }
+            
+            state.isProcessing = true;
+            els.processBtn.disabled = true;
+            els.dropZone.classList.add('processing');
+            els.progressContainer.classList.add('active');
+            updateProgress(0, 'Bắt đầu xử lý...');
+            
+            const config = state.config[state.currentPlatform];
+            debugLog(`🎬 Bắt đầu xử lý cho ${config.name}`);
+            showToast('info', `Đang xử lý cho ${config.name}...`);
+            
+            try {
+                debugLog('📖 Đang đọc file...');
+                updateProgress(5, 'Đang đọc file...');
+                const fileData = await readFileAsUint8Array(state.currentFile);
+                debugLog(`✅ File read: ${fileData.length} bytes`);
+                
+                const ext = getFileExtension(state.currentFile.type);
+                const inputName = `input.${ext}`;
+                const outputName = `output.mp4`;
+                
+                debugLog('🧹 Cleaning up old files...');
+                try { await state.ffmpeg.deleteFile(inputName); } catch(e) {}
+                try { await state.ffmpeg.deleteFile(outputName); } catch(e) {}
+                
+                debugLog('💾 Writing file to FFmpeg FS...');
+                updateProgress(10, 'Đang tải vào bộ nhớ...');
+                await state.ffmpeg.writeFile(inputName, fileData);
+                debugLog('✅ File written to FS');
+                
+                const command = buildCommand(inputName, outputName, config, state.currentFile.type);
+                debugLog(`⚙️ Command: ffmpeg ${command.join(' ')}`);
+                
+                debugLog('🎬 Executing FFmpeg...');
+                updateProgress(20, 'Đang render...');                
+                const startTime = performance.now();
+                await state.ffmpeg.exec(command);
+                const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+                debugLog(`✅ FFmpeg exec completed in ${elapsed}s`, 'success');
+                
+                debugLog('📤 Reading output file...');
+                updateProgress(90, 'Đang xuất file...');
+                const outputData = await state.ffmpeg.readFile(outputName);
+                debugLog(`✅ Output size: ${outputData.length} bytes`);
+                
+                const blob = new Blob([outputData.buffer], { type: 'video/mp4' });
+                const url = URL.createObjectURL(blob);
+                const filename = `moodbeat_${state.currentPlatform}_${Date.now()}.mp4`;
+                
+                debugLog('⬇️ Creating download...', 'success');
+                updateProgress(100, 'Hoàn thành!');
+                
+                els.videoPreview.src = url;
+                els.previewSection.classList.add('active');
+                els.previewOverlay.style.display = 'flex';
+                
+                setTimeout(() => {
+                    const a = document.createElement('a');
+                    a.href = url; a.download = filename;
+                    document.body.appendChild(a); a.click();
+                    document.body.removeChild(a);
+                }, 500);
+                
+                showToast('success', `✅ Hoàn thành trong ${elapsed}s! (${formatFileSize(blob.size)})`, 4000);
+                
+                debugLog('🧹 Cleaning up FS...');
+                try {
+                    await state.ffmpeg.deleteFile(inputName);
+                    await state.ffmpeg.deleteFile(outputName);
+                    debugLog('✅ FS cleaned');
+                } catch(e) { debugLog(`⚠️ Cleanup error: ${e.message}`, 'error'); }
+                
+            } catch (error) {
+                debugLog(`❌ Lỗi xử lý: ${error.message}`, 'error');
+                console.error('Processing error:', error);
+                showToast('error', `Lỗi: ${error.message}`);
+                updateProgress(0, 'Lỗi!');
+            } finally {
+                state.isProcessing = false;
+                els.processBtn.disabled = false;
+                els.dropZone.classList.remove('processing');
+                setTimeout(() => els.progressContainer.classList.remove('active'), 2000);
+            }
+        }
+        function buildCommand(input, output, config, mimeType) {
+            const type = mimeType.split('/')[0];
+            if (type === 'video') {
+                return ['-i', input, '-vf', `scale=${config.width}:${config.height}:force_original_aspect_ratio=decrease,pad=${config.width}:${config.height}:(ow-iw)/2:(oh-ih)/2:black`, '-c:v', 'libx264', '-preset', 'fast', '-b:v', config.bitrate, '-maxrate', config.bitrate, '-bufsize', '2000k', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-y', output];
+            } else if (type === 'audio') {
+                return ['-f', 'lavfi', '-i', `color=c=black:s=${config.width}x${config.height}:d=30`, '-i', input, '-c:v', 'libx264', '-preset', 'fast', '-b:v', config.bitrate, '-c:a', 'aac', '-b:a', '128k', '-shortest', '-movflags', '+faststart', '-y', output];
+            } else {
+                return ['-loop', '1', '-i', input, '-c:v', 'libx264', '-preset', 'fast', '-b:v', config.bitrate, '-t', '10', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-y', output];
+            }
+        }
+
+        // ==================== UTILITIES ====================
+        function readFileAsUint8Array(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(new Uint8Array(reader.result));
+                reader.onerror = () => reject(new Error('Cannot read file'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function getFileExtension(mimeType) {
+            const map = { 'video/mp4': 'mp4', 'video/quicktime': 'mov', 'video/webm': 'webm', 'audio/mpeg': 'mp3', 'audio/wav': 'wav', 'image/jpeg': 'jpg', 'image/png': 'png' };
+            return map[mimeType] || 'bin';
+        }
+
+        function updateProgress(percent, status) {
+            els.progressFill.style.width = `${percent}%`;
+            els.progressStatus.textContent = status;
+            els.progressPercent.textContent = `${Math.round(percent)}%`;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024; const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function formatDuration(seconds) {
+            if (isNaN(seconds)) return '00:00';
+            const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
+
+        function resetApp() {
+            state.currentFile = null; state.isProcessing = false;
+            els.fileInfo.classList.remove('active');
+            els.previewSection.classList.remove('active');            els.progressContainer.classList.remove('active');
+            els.processBtn.disabled = true;
+            els.fileInput.value = '';
+            els.videoPreview.src = '';
+            els.progressFill.style.width = '0%';
+            els.dropZone.classList.remove('processing');
+            debugLog('🔄 App reset');
+            showToast('info', '🔄 Đã reset', 2000);
+        }
+
+        function showToast(type, message, duration = 4000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+            els.toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('hiding');
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
+        }
+
+        // ==================== START ====================
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
