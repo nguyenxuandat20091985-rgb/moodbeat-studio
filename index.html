@@ -1,770 +1,416 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0f0f25">
-    <title>MoodBeat Studio v4.0 Pro</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="MoodBeat Studio - Công cụ xử lý video chuyên nghiệp với AI, hỗ trợ TikTok, Reels, YouTube" />
+    <title>MoodBeat Studio - Video Editor Pro</title>
     
-    <!-- Dùng script tag thay vì module để tránh lỗi CORS Worker -->
-    <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
     
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        :root {
-            --primary: #8b5cf6; --secondary: #ec4899; --accent: #06b6d4;
-            --bg-dark: #050510; --bg-card: #0f0f25; --text: #f8fafc;
-            --text-muted: #94a3b8; --border: rgba(255,255,255,0.1);
-            --success: #10b981; --error: #ef4444; --warning: #f59e0b;
-        }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: radial-gradient(ellipse at top, var(--bg-card), var(--bg-dark));
-            color: var(--text); min-height: 100vh; overflow-x: hidden;
-        }
-        .header {
-            padding: 16px 20px; background: rgba(15,15,37,0.8);
-            backdrop-filter: blur(20px); border-bottom: 1px solid var(--border);
-            position: sticky; top: 0; z-index: 100;
-        }
-        .header h1 {
-            font-size: 20px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            font-weight: 800;
-        }
-        .header span { font-size: 11px; color: var(--text-muted); display: block; font-weight: 500; }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        
-        .lyrics-box {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
-            position: relative;
-            overflow: hidden;
-        }
-        .lyrics-box::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(135deg, rgba(139,92,246,0.05), rgba(236,72,153,0.05));
-            pointer-events: none;
-        }
-        .lyrics-text {
-            font-size: 14px;
-            line-height: 1.8;
-            color: var(--text);
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 200px;
-            overflow-y: auto;
-            position: relative;
-            z-index: 1;
-        }
-        .lyrics-text .lyric-line {
-            opacity: 0.7;
-            transition: all 0.3s;
-        }
-        .lyrics-text .lyric-line.active {
-            opacity: 1;
-            color: var(--primary);
-        }
-        .lyrics-timestamp {
-            font-size: 12px;
-            color: var(--text-muted);
-            text-align: right;
-            margin-top: 12px;
-            border-top: 1px solid var(--border);
-            padding-top: 12px;
-        }
-        
-        .platform-selector { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
-        .platform-card {
-            padding: 16px; background: rgba(255,255,255,0.03);
-            border: 2px solid var(--border); border-radius: 16px;
-            text-align: center; cursor: pointer; transition: all 0.3s;
-        }
-        .platform-card.active {
-            border-color: var(--primary); background: rgba(139,92,246,0.1);
-            transform: translateY(-2px); box-shadow: 0 8px 25px rgba(139,92,246,0.3);
-        }
-        .platform-card .icon { font-size: 32px; margin-bottom: 8px; }
-        .platform-card .name { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
-        .platform-card .specs { font-size: 11px; color: var(--text-muted); }
-        
-        .drop-zone {
-            border: 2px dashed var(--border); border-radius: 20px;
-            padding: 40px 20px; text-align: center;
-            background: rgba(255,255,255,0.02); transition: all 0.3s;
-            cursor: pointer; position: relative; overflow: hidden;
-        }
-        .drop-zone.dragover { border-color: var(--primary); background: rgba(139,92,246,0.05); }
-        .drop-zone.processing { border-color: var(--warning); pointer-events: none; opacity: 0.7; }
-        .drop-zone-icon { font-size: 48px; margin-bottom: 12px; }
-        .drop-zone h3 { font-size: 16px; margin-bottom: 8px; font-weight: 600; }
-        .drop-zone p { font-size: 13px; color: var(--text-muted); }
-        .drop-zone input { display: none; }
-        
-        .progress-container { margin: 24px 0; display: none; }
-        .progress-container.active { display: block; }
-        .progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
-        .progress-fill {
-            height: 100%; width: 0%;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
-            background-size: 200% 100%; animation: shimmer 1.5s linear infinite;
-            transition: width 0.3s ease;
-        }
-        @keyframes shimmer { 0% { background-position: 0% 0%; } 100% { background-position: 200% 0%; } }
-        .progress-text { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
-        .progress-text .percentage { color: var(--primary); font-weight: 700; }
-        
-        .preview-section { margin: 24px 0; display: none; }
-        .preview-section.active { display: block; }
-        .preview-label { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-        .preview-container {
-            position: relative; border-radius: 16px; overflow: hidden;
-            background: #000; border: 1px solid var(--border); aspect-ratio: 9/16; max-height: 500px;
-        }
-        .preview-container.wide { aspect-ratio: 16/9; }
-        #videoPreview { width: 100%; height: 100%; object-fit: contain; }
-        .preview-overlay {
-            position: absolute; inset: 0; display: flex;
-            align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.6); cursor: pointer;
-        }
-        .play-button {
-            width: 70px; height: 70px; border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            display: flex; align-items: center; justify-content: center;
-            font-size: 28px; color: white; box-shadow: 0 10px 30px rgba(139,92,246,0.5);
-        }
-        
-        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; }
-        .btn {
-            padding: 16px 24px; border: none; border-radius: 12px;
-            font-size: 14px; font-weight: 700; cursor: pointer;
-            transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; box-shadow: 0 8px 25px rgba(139,92,246,0.4);
-        }
-        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); }
-        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-secondary { background: rgba(255,255,255,0.05); color: var(--text); border: 1px solid var(--border); }
-        .btn-secondary:hover { background: rgba(255,255,255,0.1); }
-        .btn-download {
-            background: linear-gradient(135deg, var(--success), #059669);
-            color: white;
-        }
-        .btn-download:hover:not(:disabled) { transform: translateY(-2px); }
-        .btn-download:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-full { grid-column: 1 / -1; }
-        
-        .toast-container {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
-        }
-        .toast {
-            padding: 14px 24px; background: rgba(15,15,37,0.95);
-            backdrop-filter: blur(10px); border-radius: 12px;
-            border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            display: flex; align-items: center; gap: 12px;
-            font-size: 13px; font-weight: 600; animation: toastSlide 0.3s ease;
-            pointer-events: all; max-width: 90vw;
-        }
-        @keyframes toastSlide { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .toast.success { border-left: 4px solid var(--success); }
-        .toast.error { border-left: 4px solid var(--error); }
-        .toast.warning { border-left: 4px solid var(--warning); }
-        .toast.info { border-left: 4px solid var(--accent); }
-        
-        .status-badge {
-            position: fixed; top: 80px; right: 20px;
-            padding: 8px 14px; background: rgba(16,185,129,0.2);
-            border: 1px solid var(--success); border-radius: 20px;
-            font-size: 11px; font-weight: 700; color: var(--success);
-            display: none; z-index: 50;
-        }
-        .status-badge.active { display: block; }
-        .status-badge.loading { color: var(--warning); border-color: var(--warning); background: rgba(245,158,11,0.2); }
-        .status-badge.error { color: var(--error); border-color: var(--error); background: rgba(239,68,68,0.2); }
-        
-        .file-info {
-            margin-top: 16px; padding: 12px;
-            background: rgba(255,255,255,0.03); border-radius: 10px;
-            border: 1px solid var(--border); display: none;
-        }
-        .file-info.active { display: block; }
-        .file-info-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
-        .file-info-row:last-child { border-bottom: none; }
-        .file-info-label { color: var(--text-muted); }
-        .file-info-value { font-weight: 600; color: var(--accent); }
-        
-        .debug-panel {
-            margin-top: 24px; padding: 12px;
-            background: rgba(0,0,0,0.4); border-radius: 10px;
-            border: 1px solid var(--border); font-family: monospace;
-            font-size: 11px; color: var(--text-muted); max-height: 200px; overflow-y: auto;
-        }
-        .debug-panel .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .debug-panel .log-entry.error { color: var(--error); }
-        .debug-panel .log-entry.success { color: var(--success); }
-        .debug-panel .log-entry.warning { color: var(--warning); }
-        
-        .cors-fix-banner {
-            background: rgba(239,68,68,0.1);
-            border: 1px solid var(--error);
-            border-radius: 12px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            display: none;
-            font-size: 13px;
-            color: var(--text);
-        }
-        .cors-fix-banner a {
-            color: var(--accent);
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        
-        @media (max-width: 640px) {
-            .platform-selector { grid-template-columns: 1fr; }
-            .action-buttons { grid-template-columns: 1fr; }
-            .lyrics-text { font-size: 13px; }
-        }
-    </style>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="assets/css/style.css" />
 </head>
 <body>
-    <header class="header">
-        <h1>🎵 MoodBeat Studio</h1>
-        <span>Pro v4.0 - FFmpeg.wasm Fixed</span>
-    </header>
-
-    <div class="status-badge" id="statusBadge">⚡ FFmpeg Ready</div>
-
-    <div class="container">
-        <div class="cors-fix-banner" id="corsBanner">
-            ⚠️ Đang gặp lỗi kết nối. <a onclick="location.reload()">Tải lại trang</a> hoặc 
-            <a onclick="loadFFmpegLegacy()">dùng phiên bản dự phòng</a>.
-        </div>
-
-        <div class="lyrics-box">
-            <div class="lyrics-text" id="lyricsText">
-                <div class="lyric-line">Chúng con can anh dao</div>
-                <div class="lyric-line">Tại sao giờ anh mới biết anh sai?</div>
-                <div class="lyric-line">Sao giờ anh mới xem em là ảnh ban mai?</div>
-                <div class="lyric-line">Làm em đau như thế rồi</div>
-                <div class="lyric-line">Nay anh đòi quay lại</div>
-                <div class="lyric-line">Luôn miệng nói yêu em</div>
-                <div class="lyric-line">Dù chưa từng có phút giây muốn bên em</div>
-                <div class="lyric-line">Chỉ đến khi mà em rời xa</div>
-                <div class="lyric-line">Anh mới nhỏ những phút êm đềm</div>
-            </div>
-            <div class="lyrics-timestamp">⏱️ 0:00 / 0:56</div>
-        </div>
-
-        <div class="platform-selector">
-            <div class="platform-card active" data-platform="tiktok" data-width="1080" data-height="1920" data-bitrate="3000k">
-                <div class="icon">🎵</div>
-                <div class="name">TikTok / Reels</div>
-                <div class="specs">9:16 · 1080×1920 · 3000k</div>
-            </div>
-            <div class="platform-card" data-platform="youtube" data-width="1920" data-height="1080" data-bitrate="5000k">
-                <div class="icon">▶️</div>
-                <div class="name">YouTube / FB</div>
-                <div class="specs">16:9 · 1920×1080 · 5000k</div>
-            </div>
-        </div>
-
-        <div class="drop-zone" id="dropZone">
-            <input type="file" id="fileInput" accept="video/*,audio/*,image/*">
-            <div class="drop-zone-icon" id="dropIcon">📁</div>
-            <h3 id="dropTitle">Kéo thả file vào đây</h3>
-            <p id="dropSub">hoặc click để chọn file</p>
-            <p style="margin-top: 8px; font-size: 11px; opacity: 0.7;">MP4, MOV, WebM, MP3, WAV, JPG, PNG</p>
-        </div>
-
-        <div class="file-info" id="fileInfo">
-            <div class="file-info-row">
-                <span class="file-info-label">📄 Tên file:</span>
-                <span class="file-info-value" id="fileName">-</span>
-            </div>
-            <div class="file-info-row">
-                <span class="file-info-label">📦 Kích thước:</span>
-                <span class="file-info-value" id="fileSize">-</span>
-            </div>
-            <div class="file-info-row">
-                <span class="file-info-label">⏱️ Thời lượng:</span>
-                <span class="file-info-value" id="fileDuration">-</span>
-            </div>
-            <div class="file-info-row">
-                <span class="file-info-label">📐 Định dạng:</span>
-                <span class="file-info-value" id="fileFormat">-</span>
-            </div>
-        </div>
-
-        <div class="progress-container" id="progressContainer">
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
-            </div>
-            <div class="progress-text">
-                <span id="progressStatus">⏳ Đang xử lý...</span>
-                <span class="percentage" id="progressPercent">0%</span>
-            </div>
-        </div>
-
-        <div class="preview-section" id="previewSection">
-            <div class="preview-label">🎬 Xem trước video</div>
-            <div class="preview-container" id="previewContainer">
-                <video id="videoPreview" controls playsinline></video>
-                <div class="preview-overlay" id="previewOverlay">
-                    <div class="play-button">▶</div>
+    <!-- ====== NAVBAR ====== -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="nav-wrapper">
+                <a href="#" class="logo">
+                    <div class="logo-icon">🎵</div>
+                    <span class="logo-text">MoodBeat <span class="logo-highlight">Studio</span></span>
+                    <span class="logo-badge">Pro</span>
+                </a>
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="#features">Tính năng</a></li>
+                    <li><a href="#how-it-works">Cách dùng</a></li>
+                    <li><a href="#pricing">Bảng giá</a></li>
+                    <li><a href="#testimonials">Đánh giá</a></li>
+                </ul>
+                <div class="nav-actions">
+                    <a href="#download" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download"></i> Tải ngay
+                    </a>
+                    <button class="menu-toggle" id="menuToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
                 </div>
             </div>
         </div>
+    </nav>
 
-        <div class="action-buttons">
-            <button class="btn btn-secondary" id="resetBtn">🔄 Reset</button>
-            <button class="btn btn-primary" id="processBtn" disabled>🎬 Xử lý Video</button>
-            <button class="btn btn-download btn-full" id="downloadBtn" disabled>⬇️ Tải xuống đã xử lý</button>
+    <!-- ====== HERO SECTION ====== -->
+    <section class="hero" id="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <span class="badge-dot"></span>
+                        v4.0 Pro - FFmpeg.wasm
+                    </div>
+                    <h1 class="hero-title">
+                        Biến ý tưởng thành
+                        <span class="gradient-text">video đỉnh cao</span>
+                    </h1>
+                    <p class="hero-desc">
+                        MoodBeat Studio là công cụ xử lý video chuyên nghiệp với AI,
+                        hỗ trợ tối ưu hóa cho TikTok, Reels, YouTube và Facebook.
+                        Tạo video chất lượng cao chỉ với vài cú click.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="#download" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play"></i> Bắt đầu ngay
+                        </a>
+                        <a href="#features" class="btn btn-outline btn-lg">
+                            <i class="fas fa-info-circle"></i> Tìm hiểu thêm
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">50K+</span>
+                            <span class="stat-label">Người dùng</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-number">1M+</span>
+                            <span class="stat-label">Video đã tạo</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-number">4.9</span>
+                            <span class="stat-label">⭐ Đánh giá</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="hero-video-wrapper">
+                        <div class="hero-video-placeholder">
+                            <div class="play-circle">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <img src="https://placehold.co/600x800/8b5cf6/ffffff?text=MoodBeat+Studio" alt="MoodBeat Studio Preview" class="hero-image" />
+                            <div class="floating-badge badge-1">
+                                <i class="fas fa-film"></i> 4K HDR
+                            </div>
+                            <div class="floating-badge badge-2">
+                                <i class="fas fa-bolt"></i> AI Enhanced
+                            </div>
+                            <div class="floating-badge badge-3">
+                                <i class="fas fa-music"></i> Beat Sync
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="debug-panel" id="debugPanel">
-            <div style="font-weight: 700; margin-bottom: 8px; color: var(--text);">🐛 Debug Log:</div>
-            <div id="debugLogs"></div>
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
         </div>
-    </div>
+    </section>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- ====== PLATFORMS ====== -->
+    <section class="platforms" id="platforms">
+        <div class="container">
+            <div class="section-label">Hỗ trợ đa nền tảng</div>
+            <h2 class="section-title">Tối ưu cho mọi <span class="gradient-text">nền tảng</span></h2>
+            <div class="platform-grid">
+                <div class="platform-card">
+                    <div class="platform-icon">🎵</div>
+                    <h3>TikTok / Reels</h3>
+                    <p>9:16 · 1080×1920 · 3000k</p>
+                    <span class="platform-tag">Phổ biến</span>
+                </div>
+                <div class="platform-card active">
+                    <div class="platform-icon">▶️</div>
+                    <h3>YouTube / FB</h3>
+                    <p>16:9 · 1920×1080 · 5000k</p>
+                    <span class="platform-tag">Chất lượng cao</span>
+                </div>
+                <div class="platform-card">
+                    <div class="platform-icon">📱</div>
+                    <h3>Instagram Stories</h3>
+                    <p>9:16 · 1080×1920 · 2500k</p>
+                    <span class="platform-tag">Mobile</span>
+                </div>
+                <div class="platform-card">
+                    <div class="platform-icon">🎬</div>
+                    <h3>Twitter / LinkedIn</h3>
+                    <p>1:1 · 1080×1080 · 2000k</p>
+                    <span class="platform-tag">Social</span>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <script>
-        // ============================================================
-        //  MOODBEAT STUDIO v4.0 - FIXED CORS
-        //  Dùng FFmpeg.wasm với script tag (không dùng module)
-        // ============================================================
-        
-        (function() {
-            'use strict';
-            
-            // ----- DOM refs -----
-            const dropZone = document.getElementById('dropZone');
-            const fileInput = document.getElementById('fileInput');
-            const processBtn = document.getElementById('processBtn');
-            const resetBtn = document.getElementById('resetBtn');
-            const downloadBtn = document.getElementById('downloadBtn');
-            const progressContainer = document.getElementById('progressContainer');
-            const progressFill = document.getElementById('progressFill');
-            const progressStatus = document.getElementById('progressStatus');
-            const progressPercent = document.getElementById('progressPercent');
-            const previewSection = document.getElementById('previewSection');
-            const videoPreview = document.getElementById('videoPreview');
-            const previewOverlay = document.getElementById('previewOverlay');
-            const previewContainer = document.getElementById('previewContainer');
-            const fileInfo = document.getElementById('fileInfo');
-            const fileName = document.getElementById('fileName');
-            const fileSize = document.getElementById('fileSize');
-            const fileDuration = document.getElementById('fileDuration');
-            const fileFormat = document.getElementById('fileFormat');
-            const statusBadge = document.getElementById('statusBadge');
-            const debugLogs = document.getElementById('debugLogs');
-            const dropIcon = document.getElementById('dropIcon');
-            const dropTitle = document.getElementById('dropTitle');
-            const dropSub = document.getElementById('dropSub');
-            const corsBanner = document.getElementById('corsBanner');
-            
-            // ----- State -----
-            let selectedFile = null;
-            let processedBlob = null;
-            let isProcessing = false;
-            let isFFmpegReady = false;
-            let ffmpegInstance = null;
-            let platform = 'tiktok';
-            
-            // ----- Toast -----
-            function showToast(message, type = 'info', duration = 4000) {
-                const container = document.getElementById('toastContainer');
-                const toast = document.createElement('div');
-                toast.className = `toast ${type}`;
-                const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-                toast.innerHTML = `${icons[type] || 'ℹ️'} ${message}`;
-                container.appendChild(toast);
-                setTimeout(() => { 
-                    toast.style.opacity = '0'; 
-                    toast.style.transform = 'translateY(20px)'; 
-                    setTimeout(() => toast.remove(), 300); 
-                }, duration);
-            }
-            
-            // ----- Debug -----
-            function debugLog(message, type = 'info') {
-                const entry = document.createElement('div');
-                entry.className = `log-entry ${type}`;
-                const time = new Date().toLocaleTimeString();
-                entry.textContent = `[${time}] ${message}`;
-                debugLogs.appendChild(entry);
-                debugLogs.scrollTop = debugLogs.scrollHeight;
-                console.log(`[MoodBeat] ${message}`);
-            }
-            
-            // ----- Format -----
-            function formatFileSize(bytes) {
-                if (bytes < 1024) return bytes + ' B';
-                if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-                return (bytes / 1048576).toFixed(1) + ' MB';
-            }
-            
-            function formatDuration(seconds) {
-                if (!seconds || isNaN(seconds)) return '--:--';
-                const m = Math.floor(seconds / 60);
-                const s = Math.floor(seconds % 60);
-                return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-            }
-            
-            function updateBadge(text, type = 'ready') {
-                statusBadge.textContent = text;
-                statusBadge.className = 'status-badge active';
-                if (type === 'loading') statusBadge.classList.add('loading');
-                else if (type === 'error') statusBadge.classList.add('error');
-                else statusBadge.classList.remove('loading', 'error');
-            }
-            
-            // ----- Platform -----
-            document.querySelectorAll('.platform-card').forEach(card => {
-                card.addEventListener('click', function() {
-                    document.querySelectorAll('.platform-card').forEach(c => c.classList.remove('active'));
-                    this.classList.add('active');
-                    platform = this.dataset.platform;
-                    previewContainer.className = 'preview-container';
-                    if (platform === 'youtube') previewContainer.classList.add('wide');
-                    debugLog(`Đã chọn: ${platform}`, 'info');
-                    processBtn.textContent = `🎬 Xử lý cho ${platform === 'tiktok' ? 'TikTok/Reels' : 'YouTube/FB'}`;
-                });
-            });
-            
-            // ----- Load FFmpeg (dùng script tag - KHÔNG CÓ CORS) -----
-            function loadFFmpeg() {
-                try {
-                    updateBadge('⏳ Đang tải FFmpeg...', 'loading');
-                    debugLog('Đang tải FFmpeg.wasm (script tag)...', 'info');
-                    
-                    // Kiểm tra FFmpeg đã load từ script tag
-                    if (typeof FFmpeg === 'undefined') {
-                        debugLog('⚠️ FFmpeg chưa load, đang tải...', 'warning');
-                        // Tải script động
-                        const script = document.createElement('script');
-                        script.src = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js';
-                        script.onload = () => {
-                            debugLog('✅ FFmpeg loaded from CDN', 'success');
-                            initFFmpeg();
-                        };
-                        script.onerror = () => {
-                            debugLog('❌ Lỗi tải FFmpeg từ CDN', 'error');
-                            corsBanner.style.display = 'block';
-                            updateBadge('❌ Lỗi tải', 'error');
-                        };
-                        document.head.appendChild(script);
-                        return;
-                    }
-                    
-                    initFFmpeg();
-                    
-                } catch (error) {
-                    debugLog(`❌ Lỗi: ${error.message}`, 'error');
-                    updateBadge('❌ Lỗi', 'error');
-                    corsBanner.style.display = 'block';
-                }
-            }
-            
-            function initFFmpeg() {
-                try {
-                    ffmpegInstance = new FFmpeg();
-                    isFFmpegReady = true;
-                    updateBadge('⚡ FFmpeg sẵn sàng', 'ready');
-                    debugLog('✅ FFmpeg.wasm đã sẵn sàng!', 'success');
-                    showToast('FFmpeg đã sẵn sàng!', 'success');
-                    processBtn.disabled = !selectedFile;
-                    corsBanner.style.display = 'none';
-                } catch (error) {
-                    debugLog(`❌ Lỗi khởi tạo FFmpeg: ${error.message}`, 'error');
-                    corsBanner.style.display = 'block';
-                }
-            }
-            
-            // Hàm dự phòng cho banner
-            window.loadFFmpegLegacy = loadFFmpeg;
-            
-            // ----- Handle file -----
-            function handleFile(file) {
-                if (!file) return;
-                
-                const isVideo = file.type.startsWith('video/');
-                const isAudio = file.type.startsWith('audio/');
-                const isImage = file.type.startsWith('image/');
-                
-                if (!isVideo && !isAudio && !isImage) {
-                    showToast('Vui lòng chọn file video, audio hoặc ảnh!', 'warning');
-                    return;
-                }
-                
-                selectedFile = file;
-                processedBlob = null;
-                downloadBtn.disabled = true;
-                downloadBtn.textContent = '⬇️ Tải xuống đã xử lý';
-                
-                fileName.textContent = file.name;
-                fileSize.textContent = formatFileSize(file.size);
-                fileFormat.textContent = file.type || 'Không xác định';
-                fileInfo.classList.add('active');
-                
-                dropIcon.textContent = isVideo ? '🎬' : isAudio ? '🎵' : '🖼️';
-                dropTitle.textContent = file.name;
-                dropSub.textContent = `${formatFileSize(file.size)} · ${file.type || 'Unknown'}`;
-                
-                const url = URL.createObjectURL(file);
-                videoPreview.src = url;
-                videoPreview.load();
-                
-                if (isVideo) {
-                    videoPreview.onloadedmetadata = function() {
-                        fileDuration.textContent = formatDuration(this.duration);
-                        previewSection.classList.add('active');
-                        previewOverlay.style.display = 'flex';
-                        debugLog(`Video: ${this.duration}s, ${this.videoWidth}x${this.videoHeight}`, 'info');
-                    };
-                } else if (isImage) {
-                    videoPreview.onloadedmetadata = null;
-                    videoPreview.style.objectFit = 'contain';
-                    previewSection.classList.add('active');
-                    previewOverlay.style.display = 'none';
-                    fileDuration.textContent = '--:--';
-                } else {
-                    fileDuration.textContent = '--:--';
-                    previewSection.classList.add('active');
-                    previewOverlay.style.display = 'flex';
-                    previewOverlay.innerHTML = '<div style="font-size:48px;">🎵</div>';
-                }
-                
-                processBtn.disabled = !isFFmpegReady;
-                debugLog(`Đã chọn: ${file.name}`, 'success');
-                showToast(`Đã tải: ${file.name}`, 'success');
-            }
-            
-            // ----- Process video -----
-            async function processVideo() {
-                if (!selectedFile || !ffmpegInstance || isProcessing) return;
-                if (!isFFmpegReady) {
-                    showToast('FFmpeg chưa sẵn sàng!', 'warning');
-                    loadFFmpeg();
-                    return;
-                }
-                
-                isProcessing = true;
-                processBtn.disabled = true;
-                processBtn.textContent = '⏳ Đang xử lý...';
-                dropZone.classList.add('processing');
-                progressContainer.classList.add('active');
-                downloadBtn.disabled = true;
-                
-                try {
-                    const isImage = selectedFile.type.startsWith('image/');
-                    const isAudio = selectedFile.type.startsWith('audio/');
-                    
-                    const platformCard = document.querySelector(`.platform-card[data-platform="${platform}"]`);
-                    const targetWidth = parseInt(platformCard.dataset.width);
-                    const targetHeight = parseInt(platformCard.dataset.height);
-                    const bitrate = platformCard.dataset.bitrate;
-                    
-                    debugLog(`Xử lý: ${selectedFile.name} → ${platform} (${targetWidth}x${targetHeight})`, 'info');
-                    updateBadge('⏳ Đang xử lý...', 'loading');
-                    
-                    const data = await fetchFile(selectedFile);
-                    ffmpegInstance.FS('writeFile', 'input', data);
-                    
-                    let args = ['-i', 'input'];
-                    let filter = `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2`;
-                    
-                    if (isImage) {
-                        args.push('-loop', '1', '-t', '5');
-                        filter = `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2`;
-                    }
-                    
-                    if (isAudio) {
-                        const bgCmd = `color=c=black:s=${targetWidth}x${targetHeight}:d=30,format=yuv420p`;
-                        args = ['-f', 'lavfi', '-i', bgCmd, '-i', 'input', '-c:v', 'libx264', '-c:a', 'aac', '-shortest'];
-                        filter = null;
-                    }
-                    
-                    if (filter) args.push('-vf', filter);
-                    
-                    args.push('-b:v', bitrate);
-                    args.push('-maxrate', bitrate);
-                    args.push('-bufsize', '6000k');
-                    args.push('-c:a', 'aac', '-b:a', '192k');
-                    args.push('-pix_fmt', 'yuv420p');
-                    args.push('-movflags', '+faststart');
-                    args.push('-y', 'output.mp4');
-                    
-                    debugLog(`Args: ${args.join(' ')}`, 'info');
-                    
-                    ffmpegInstance.setProgress(({ ratio }) => {
-                        const percent = Math.round(ratio * 100);
-                        progressFill.style.width = percent + '%';
-                        progressPercent.textContent = percent + '%';
-                        if (percent < 100) {
-                            progressStatus.textContent = `⏳ Đang xử lý... ${percent}%`;
-                        }
-                    });
-                    
-                    await ffmpegInstance.run(...args);
-                    
-                    const outputData = ffmpegInstance.FS('readFile', 'output.mp4');
-                    processedBlob = new Blob([outputData.buffer], { type: 'video/mp4' });
-                    
-                    const outputUrl = URL.createObjectURL(processedBlob);
-                    videoPreview.src = outputUrl;
-                    videoPreview.load();
-                    previewOverlay.style.display = 'flex';
-                    previewSection.classList.add('active');
-                    previewContainer.className = 'preview-container';
-                    if (platform === 'youtube') previewContainer.classList.add('wide');
-                    
-                    downloadBtn.disabled = false;
-                    downloadBtn.textContent = `⬇️ Tải xuống (${formatFileSize(processedBlob.size)})`;
-                    
-                    progressFill.style.width = '100%';
-                    progressPercent.textContent = '100%';
-                    progressStatus.textContent = '✅ Hoàn thành!';
-                    
-                    debugLog(`✅ Xử lý thành công! Output: ${formatFileSize(processedBlob.size)}`, 'success');
-                    showToast('Xử lý thành công!', 'success');
-                    updateBadge('✅ Hoàn thành', 'ready');
-                    
-                } catch (error) {
-                    debugLog(`❌ Lỗi: ${error.message}`, 'error');
-                    showToast(`Lỗi: ${error.message}`, 'error');
-                    updateBadge('❌ Lỗi', 'error');
-                } finally {
-                    isProcessing = false;
-                    processBtn.disabled = false;
-                    processBtn.textContent = '🎬 Xử lý Video';
-                    dropZone.classList.remove('processing');
-                    
-                    try {
-                        ffmpegInstance.FS('unlink', 'input');
-                        ffmpegInstance.FS('unlink', 'output.mp4');
-                    } catch(e) {}
-                }
-            }
-            
-            // ----- Download -----
-            function downloadProcessed() {
-                if (!processedBlob) return;
-                const url = URL.createObjectURL(processedBlob);
-                const a = document.createElement('a');
-                const ext = platform === 'tiktok' ? '_tiktok' : '_youtube';
-                const baseName = selectedFile ? selectedFile.name.replace(/\.[^.]+$/, '') : 'video';
-                a.download = `${baseName}${ext}.mp4`;
-                a.href = url;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(url), 5000);
-                showToast('Đang tải xuống...', 'success');
-                debugLog(`Đã tải: ${a.download}`, 'success');
-            }
-            
-            // ----- Reset -----
-            function resetAll() {
-                selectedFile = null;
-                processedBlob = null;
-                downloadBtn.disabled = true;
-                downloadBtn.textContent = '⬇️ Tải xuống đã xử lý';
-                fileInfo.classList.remove('active');
-                progressContainer.classList.remove('active');
-                progressFill.style.width = '0%';
-                progressPercent.textContent = '0%';
-                progressStatus.textContent = 'Đang xử lý...';
-                previewSection.classList.remove('active');
-                videoPreview.src = '';
-                fileInput.value = '';
-                dropIcon.textContent = '📁';
-                dropTitle.textContent = 'Kéo thả file vào đây';
-                dropSub.textContent = 'hoặc click để chọn file';
-                processBtn.disabled = true;
-                processBtn.textContent = '🎬 Xử lý Video';
-                debugLog('🔄 Reset', 'warning');
-                showToast('Đã reset', 'info');
-                if (isFFmpegReady) updateBadge('⚡ FFmpeg sẵn sàng', 'ready');
-                videoPreview.onloadedmetadata = null;
-                previewOverlay.innerHTML = '<div class="play-button">▶</div>';
-            }
-            
-            // ----- Events -----
-            dropZone.addEventListener('click', () => { if (!isProcessing) fileInput.click(); });
-            
-            fileInput.addEventListener('change', (e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                    handleFile(e.target.files[0]);
-                }
-            });
-            
-            dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-            dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
-            dropZone.addEventListener('drop', (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
-                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-                    handleFile(e.dataTransfer.files[0]);
-                }
-            });
-            
-            processBtn.addEventListener('click', processVideo);
-            resetBtn.addEventListener('click', resetAll);
-            downloadBtn.addEventListener('click', downloadProcessed);
-            
-            previewOverlay.addEventListener('click', () => {
-                if (videoPreview.paused) { videoPreview.play(); previewOverlay.style.display = 'none'; }
-                else { videoPreview.pause(); previewOverlay.style.display = 'flex'; }
-            });
-            
-            videoPreview.addEventListener('play', () => { previewOverlay.style.display = 'none'; });
-            videoPreview.addEventListener('pause', () => { previewOverlay.style.display = 'flex'; });
-            videoPreview.addEventListener('ended', () => { previewOverlay.style.display = 'flex'; });
-            
-            // ----- Init -----
-            debugLog('🚀 MoodBeat Studio v4.0 khởi động', 'info');
-            debugLog('📱 Đang tải FFmpeg...', 'info');
-            
-            // Tải FFmpeg
-            setTimeout(loadFFmpeg, 500);
-            
-            // Keyboard shortcuts
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !processBtn.disabled) processBtn.click();
-                if (e.key === 'r' || e.key === 'R') resetBtn.click();
-            });
-            
-            // Paste support
-            document.addEventListener('paste', (e) => {
-                const items = e.clipboardData && e.clipboardData.items;
-                if (items) {
-                    for (const item of items) {
-                        if (item.type.startsWith('image/') || item.type.startsWith('video/')) {
-                            const file = item.getAsFile();
-                            if (file) handleFile(file);
-                            break;
-                        }
-                    }
-                }
-            });
-            
-            debugLog('✅ Sẵn sàng!', 'success');
-            showToast('🎵 Chào mừng!', 'info', 3000);
-            
-        })();
-    </script>
+    <!-- ====== FEATURES ====== -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-label">Tính năng nổi bật</div>
+            <h2 class="section-title">Mọi thứ bạn cần trong <span class="gradient-text">một công cụ</span></h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3>AI Enhancement</h3>
+                    <p>Tự động nâng cao chất lượng video, cân bằng màu sắc và độ sáng tối ưu.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(236,72,153,0.15); color: #ec4899;">
+                        <i class="fas fa-music"></i>
+                    </div>
+                    <h3>Beat Sync</h3>
+                    <p>Đồng bộ video với nhạc theo nhịp, tạo hiệu ứng chuyển cảnh ấn tượng.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(6,182,212,0.15); color: #06b6d4;">
+                        <i class="fas fa-expand"></i>
+                    </div>
+                    <h3>Smart Cropping</h3>
+                    <p>Cắt và chỉnh tỷ lệ video thông minh, giữ nguyên nội dung quan trọng.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Lightning Fast</h3>
+                    <p>Xử lý nhanh chóng với FFmpeg.wasm, không cần tải lên server.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h3>Multi-format</h3>
+                    <p>Hỗ trợ MP4, MOV, WebM, MP3, WAV, JPG, PNG và nhiều định dạng khác.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: rgba(139,92,246,0.15); color: #8b5cf6;">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Private & Secure</h3>
+                    <p>Xử lý hoàn toàn trên trình duyệt, dữ liệu không bao giờ rời khỏi máy bạn.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== HOW IT WORKS ====== -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-label">Cách sử dụng</div>
+            <h2 class="section-title">Chỉ <span class="gradient-text">3 bước</span> đơn giản</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-icon">📁</div>
+                    <h3>Tải file lên</h3>
+                    <p>Kéo thả hoặc click để chọn video, nhạc hoặc ảnh từ máy tính.</p>
+                </div>
+                <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-icon">⚙️</div>
+                    <h3>Chọn cấu hình</h3>
+                    <p>Lựa chọn nền tảng, tỷ lệ và chất lượng đầu ra mong muốn.</p>
+                </div>
+                <div class="step-arrow"><i class="fas fa-arrow-right"></i></div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-icon">🎬</div>
+                    <h3>Tải xuống</h3>
+                    <p>Nhấn xử lý và tải video đã hoàn thiện về máy ngay lập tức.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== PRICING ====== -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-label">Bảng giá</div>
+            <h2 class="section-title">Chọn gói phù hợp với <span class="gradient-text">bạn</span></h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Miễn phí</h3>
+                        <div class="pricing-price">$0</div>
+                        <p>Dùng thử cơ bản</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Xử lý video cơ bản</li>
+                        <li><i class="fas fa-check"></i> Hỗ trợ 2 nền tảng</li>
+                        <li><i class="fas fa-check"></i> File size ≤ 100MB</li>
+                        <li><i class="fas fa-times"></i> AI Enhancement</li>
+                        <li><i class="fas fa-times"></i> Beat Sync</li>
+                        <li><i class="fas fa-times"></i> Export 4K</li>
+                    </ul>
+                    <a href="#" class="btn btn-outline btn-full">Dùng thử</a>
+                </div>
+                <div class="pricing-card popular">
+                    <div class="pricing-popular">Phổ biến nhất</div>
+                    <div class="pricing-header">
+                        <h3>Pro</h3>
+                        <div class="pricing-price">$12<span>/tháng</span></div>
+                        <p>Dành cho nhà sáng tạo</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Mọi tính năng nâng cao</li>
+                        <li><i class="fas fa-check"></i> Hỗ trợ 4+ nền tảng</li>
+                        <li><i class="fas fa-check"></i> File size ≤ 2GB</li>
+                        <li><i class="fas fa-check"></i> AI Enhancement</li>
+                        <li><i class="fas fa-check"></i> Beat Sync</li>
+                        <li><i class="fas fa-check"></i> Export 4K</li>
+                    </ul>
+                    <a href="#" class="btn btn-primary btn-full">Đăng ký ngay</a>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3>Business</h3>
+                        <div class="pricing-price">$29<span>/tháng</span></div>
+                        <p>Dành cho doanh nghiệp</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> Mọi tính năng Pro</li>
+                        <li><i class="fas fa-check"></i> Hỗ trợ 6+ nền tảng</li>
+                        <li><i class="fas fa-check"></i> File size ≤ 10GB</li>
+                        <li><i class="fas fa-check"></i> Team collaboration</li>
+                        <li><i class="fas fa-check"></i> API access</li>
+                        <li><i class="fas fa-check"></i> Priority support</li>
+                    </ul>
+                    <a href="#" class="btn btn-outline btn-full">Liên hệ</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== TESTIMONIALS ====== -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-label">Đánh giá</div>
+            <h2 class="section-title">Người dùng nói gì về <span class="gradient-text">MoodBeat</span></h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p>"MoodBeat Studio giúp tôi tạo video TikTok chuyên nghiệp chỉ trong vài phút. Công cụ AI thực sự ấn tượng!"</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">NT</div>
+                        <div>
+                            <strong>Nguyễn Thành</strong>
+                            <span>Content Creator</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p>"Tôi đã thử nhiều tool nhưng MoodBeat là tốt nhất. Xử lý nhanh, chất lượng cao, giao diện đẹp."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">TM</div>
+                        <div>
+                            <strong>Trang Mai</strong>
+                            <span>Social Media Manager</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p>"Tính năng Beat Sync thật tuyệt vời! Video của tôi trở nên sống động và thu hút hơn rất nhiều."</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">PL</div>
+                        <div>
+                            <strong>Phúc Lê</strong>
+                            <span>Musician</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== CTA / DOWNLOAD ====== -->
+    <section class="cta" id="download">
+        <div class="container">
+            <div class="cta-wrapper">
+                <h2>Sẵn sàng tạo video <span class="gradient-text">đỉnh cao</span>?</h2>
+                <p>Tải ngay MoodBeat Studio và bắt đầu sáng tạo không giới hạn.</p>
+                <div class="cta-buttons">
+                    <a href="#" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download"></i> Tải về miễn phí
+                    </a>
+                    <a href="#" class="btn btn-outline btn-lg">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+                <p class="cta-note">💡 Dùng thử miễn phí 14 ngày, không cần thẻ tín dụng</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ====== FOOTER ====== -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="logo">
+                        <div class="logo-icon">🎵</div>
+                        <span class="logo-text">MoodBeat <span class="logo-highlight">Studio</span></span>
+                    </a>
+                    <p>Công cụ xử lý video chuyên nghiệp với AI, hỗ trợ đa nền tảng.</p>
+                    <div class="footer-social">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Sản phẩm</h4>
+                    <ul>
+                        <li><a href="#features">Tính năng</a></li>
+                        <li><a href="#pricing">Bảng giá</a></li>
+                        <li><a href="#">Changelog</a></li>
+                        <li><a href="#">Roadmap</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Hỗ trợ</h4>
+                    <ul>
+                        <li><a href="#">Tài liệu</a></li>
+                        <li><a href="#">FAQ</a></li>
+                        <li><a href="#">Blog</a></li>
+                        <li><a href="#">Liên hệ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Pháp lý</h4>
+                    <ul>
+                        <li><a href="#">Điều khoản</a></li>
+                        <li><a href="#">Bảo mật</a></li>
+                        <li><a href="#">Cookie</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 MoodBeat Studio. All rights reserved.</p>
+                <p>Made with <i class="fas fa-heart" style="color: #ec4899;"></i> by MoodBeat Team</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ====== BACK TO TOP ====== -->
+    <button class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <!-- ====== MAIN JS ====== -->
+    <script src="assets/js/main.js"></script>
 </body>
 </html>
